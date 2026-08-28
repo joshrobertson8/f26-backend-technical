@@ -10,3 +10,11 @@ class EventService:
     def create(self, data: EventInput) -> Event:
         raise NotImplementedError
 
+    def read(self, event_id: str) -> Event:
+        raise NotImplementedError
+
+    def update(self, event_id: str, data: EventInput) -> Event:
+        raise NotImplementedError
+
+    def delete(self, event_id: str) -> None:
+        raise NotImplementedError
