@@ -31,3 +31,12 @@ def make_router(service: EventService, store: MemoryStore) -> APIRouter:
     def update(event_id: str, data: EventInput):
         validate_event_input(data)
 
+        return service.update(event_id, data)
+
+    @router.delete("/events/{event_id}", status_code=204)
+    def delete(event_id: str):
+        service.delete(event_id)
+
+        return Response(status_code=204)
+
+    return router
