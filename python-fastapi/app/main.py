@@ -13,3 +13,13 @@ def create_app() -> FastAPI:
     store = MemoryStore()
     service = EventService(store)
 
+    app.include_router(make_router(service, store))
+
+    @app.exception_handler(ServiceError)
+    async def service_error(_request: Request, error: ServiceError):
+        return JSONResponse({"error": str(error)}, status_code=error.status)
+
+    @app.exception_handler(NotImplementedError)
+    async def unfinished(_request: Request, _error: NotImplementedError):
+        return JSONResponse({"error": "Implement the event service"}, status_code=501)
+
