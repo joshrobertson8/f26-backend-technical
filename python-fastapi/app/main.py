@@ -23,3 +23,11 @@ def create_app() -> FastAPI:
     async def unfinished(_request: Request, _error: NotImplementedError):
         return JSONResponse({"error": "Implement the event service"}, status_code=501)
 
+    @app.exception_handler(RequestValidationError)
+    async def invalid(_request: Request, _error: RequestValidationError):
+        return JSONResponse({"error": "Invalid event body"}, status_code=400)
+
+    return app
+
+
+app = create_app()
