@@ -4,3 +4,9 @@ Run the installer in `setup/` from the repository root and select Python (FastAP
 
 Run tests after editing the service. Tests start and stop the server automatically.
 
+```sh
+python tests/http_contract.py
+```
+
+Check the scaffold only:
+
