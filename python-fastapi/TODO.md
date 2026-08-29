@@ -20,3 +20,18 @@ Complete the four methods in [app/service.py](app/service.py). The rest of the a
 
 ## update
 
+- Replace the event's details and return the updated event. Keep its ID.
+- If no description or invitees are given, clear those fields. An empty invitee list also clears invitations.
+- Keep the text and invitee order as given.
+- Report an error if the event does not exist. This should be the error even if the invitees are also invalid.
+- Report an error if an invitee does not exist or appears more than once. Leave the event unchanged in that case.
+
+## delete
+
+- Remove the event with the given ID.
+- Report an error if it does not exist or was already deleted.
+- Once deleted, the event can no longer be read or updated.
+
+Changes to one event must not change other events or users.
+
+The starter's eight event service checks fail because these methods are unfinished. Use [commands.md](commands.md) to run the tests.
