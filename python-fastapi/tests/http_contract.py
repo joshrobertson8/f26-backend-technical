@@ -366,3 +366,28 @@ class ConsoleResult(unittest.TestResult):
         if error is None:
             return
 
+        status = "ERROR"
+        if issubclass(error[0], test.failureException):
+            status = "FAIL"
+
+        case = ", ".join(f"{key}={value!r}" for key, value in subtest.params.items())
+        self.record_problem(error, status, case)
+
+    def addSkip(self, test, reason):
+        super().addSkip(test, reason)
+
+        if self.status == "PASS":
+            self.status = "SKIP"
+
+        self.details.append(reason)
+
+    def addExpectedFailure(self, test, error):
+        super().addExpectedFailure(test, error)
+        self.status = "SKIP"
+        self.details.append("Marked as an expected failure")
+
+    def addUnexpectedSuccess(self, test):
+        super().addUnexpectedSuccess(test)
+        self.status = "FAIL"
+        self.details.append("Test passed but was marked as an expected failure")
+
