@@ -38,3 +38,15 @@ export function parseEventInput(body) {
     throw new ServiceError(400, "inviteeIds must be a list");
   }
 
+  const inviteeIds = [];
+
+  for (const id of invitees) {
+    if (typeof id !== "string") {
+      throw new ServiceError(400, "Each invitee ID must be a string");
+    }
+
+    inviteeIds.push(id);
+  }
+
+  return new EventInput(title, description, inviteeIds);
+}
