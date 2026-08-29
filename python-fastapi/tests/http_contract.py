@@ -391,3 +391,34 @@ class ConsoleResult(unittest.TestResult):
         self.status = "FAIL"
         self.details.append("Test passed but was marked as an expected failure")
 
+    def stopTest(self, test):
+        super().stopTest(test)
+
+        label = test.shortDescription()
+        if not label:
+            label = test._testMethodName.removeprefix("test_").replace("_", " ").capitalize()
+
+        marker = f"[{self.status}]"
+        print(f"  {marker:7} {label}", flush=True)
+
+        if self.status == "PASS":
+            self.passed_count += 1
+        elif self.status == "FAIL":
+            self.failed_count += 1
+        elif self.status == "ERROR":
+            self.error_count += 1
+        else:
+            self.skipped_count += 1
+
+        visible_details = self.details
+        if not self.verbose:
+            visible_details = self.details[:3]
+
+        for message in visible_details:
+            for line in message.splitlines():
+                print(f"          {line}")
+
+        hidden = len(self.details) - len(visible_details)
+        if hidden:
+            print(f"          Additional details hidden: {hidden}. Use --verbose to see all.")
+
