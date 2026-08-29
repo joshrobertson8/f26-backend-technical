@@ -136,3 +136,78 @@ class ScaffoldTests(ApiTest):
         users = self.call("GET", "/api/users", 200)
         self.assertEqual(sorted(users, key=lambda user: user["id"]), USERS)
 
+    def test_request_shape_rejected_before_service(self):
+        """Invalid request fields return 400"""
+        invalid = [
+            {},
+            {"title": ""},
+            {"title": " \t\n"},
+            {"title": None},
+            {"title": 42},
+            {"title": True},
+            {"title": "Dinner", "description": None},
+            {"title": "Dinner", "description": 12},
+            {"title": "Dinner", "inviteeIds": None},
+            {"title": "Dinner", "inviteeIds": "u1"},
+            {"title": "Dinner", "inviteeIds": [3]},
+            {"title": "Dinner", "inviteeIds": [None]},
+            {"title": "Dinner", "id": "client-chosen"},
+            {"title": "Dinner", "extra": True},
+            [],
+            "string",
+            42,
+        ]
+        for body in invalid:
+            for method, path in [
+                ("POST", "/api/events"),
+                ("PUT", "/api/events/missing"),
+            ]:
+                with self.subTest(method=method, body=body):
+                    self.call(method, path, 400, body)
+
+    def test_malformed_json(self):
+        """Malformed JSON returns 400"""
+        for raw in [b'{"title":', b"null", b'{"title":"Dinner"} trailing']:
+            for method, path in [
+                ("POST", "/api/events"),
+                ("PUT", "/api/events/missing"),
+            ]:
+                with self.subTest(method=method, raw=raw):
+                    self.call(method, path, 400, raw=raw)
+
+
+class CandidateTests(ApiTest):
+    def test_create_event(self):
+        """Create an event"""
+        body = {
+            "title": "  Café team dinner  ",
+            "description": 'Line one\n"Bring snacks" ☕',
+            "inviteeIds": ["u3", "u1", "u2"],
+        }
+        event = self.create(body)
+        self.assert_event(event, event["id"], body)
+
+        minimal = self.create({"title": "Minimal"})
+        self.assert_event(minimal, minimal["id"], {"title": "Minimal"})
+
+        events = [self.create({"title": f"Event {i}"}) for i in range(8)]
+        created = [event, minimal] + events
+        self.assertEqual(len({item["id"] for item in created}), len(created))
+
+    def test_create_rejects_invalid_invitations(self):
+        """Create rejects invalid invitations"""
+        for invitees in [["no-such-user"], ["u1", "unknown"], ["u1", "u1"], [""]]:
+            with self.subTest(invitees=invitees):
+                self.call(
+                    "POST",
+                    "/api/events",
+                    400,
+                    {"title": "Invalid", "inviteeIds": invitees},
+                )
+
+    def test_read_event(self):
+        """Read an event"""
+        event = self.create()
+        path = self.path(event["id"])
+        self.assertEqual(self.call("GET", path, 200), event)
+
