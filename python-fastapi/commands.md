@@ -1,0 +1,6 @@
+# Commands
+
+Run the installer in `setup/` from the repository root and select Python (FastAPI). Setup opens this folder in the prepared terminal.
+
+Run tests after editing the service. Tests start and stop the server automatically.
+
