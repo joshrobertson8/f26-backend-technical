@@ -10,3 +10,12 @@ python tests/http_contract.py
 
 Check the scaffold only:
 
+```sh
+python tests/http_contract.py --smoke
+```
+
+Reinstall dependencies if needed:
+
+```sh
+python -m pip install -r requirements.txt
+```
