@@ -1,0 +1,18 @@
+{
+  "name": "f26-events-javascript-express",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "test": "python3 tests/http_contract.py",
+    "test:smoke": "python3 tests/http_contract.py --smoke"
+  },
+  "dependencies": {
+    "express": "5.2.1"
+  },
+  "type": "module"
+}
