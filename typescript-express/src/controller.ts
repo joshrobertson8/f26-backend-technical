@@ -11,3 +11,16 @@ export function controller(service: EventService, store: MemoryStore): Router {
     response.json({ status: "ok" });
   });
 
+  router.get("/users", (request, response) => {
+    const users = Array.from(store.users.values());
+
+    response.json(users);
+  });
+
+  router.post("/events", (request, response) => {
+    const data = parseEventInput(request.body);
+    const event = service.create(data);
+
+    response.status(201).json(event);
+  });
+
