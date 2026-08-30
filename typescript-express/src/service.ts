@@ -17,3 +17,11 @@ export class EventService {
     throw new NotImplementedError();
   }
 
+  update(eventId: string, data: EventInput): Event {
+    throw new NotImplementedError();
+  }
+
+  delete(eventId: string): void {
+    throw new NotImplementedError();
+  }
+}
