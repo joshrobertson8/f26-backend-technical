@@ -9,3 +9,6 @@ export interface EventInput {
   inviteeIds: string[];
 }
 
+export interface Event extends EventInput {
+  id: string;
+}
