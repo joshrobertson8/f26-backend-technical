@@ -578,3 +578,36 @@ def main():
     print(f"{mode} | {suite.countTestCases()} tests", flush=True)
     print("=" * 72, flush=True)
 
+    if args.base_url:
+        print(f"Using {args.base_url}", flush=True)
+    else:
+        print("Starting test server...", flush=True)
+
+    result = ConsoleResult(verbose=args.verbose)
+
+    try:
+        with running_server(args.base_url):
+            started = time.monotonic()
+            suite.run(result)
+            elapsed = time.monotonic() - started
+    except Exception as error:
+        print("\n" + "=" * 72)
+        print("RESULT: ERROR - Test run could not finish")
+        print("=" * 72)
+        for line in str(error).splitlines():
+            print(f"  {line}")
+        if args.verbose:
+            traceback.print_exc()
+        print("\nCheck the install/build commands in commands.md.\n")
+        return 1
+
+    result.print_summary(elapsed)
+
+    if result.wasSuccessful():
+        return 0
+
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
