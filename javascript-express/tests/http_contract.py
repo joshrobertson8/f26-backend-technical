@@ -211,3 +211,66 @@ class CandidateTests(ApiTest):
         path = self.path(event["id"])
         self.assertEqual(self.call("GET", path, 200), event)
 
+    def test_read_missing_event(self):
+        """Read reports a missing event"""
+        path = self.path("missing-" + uuid4().hex)
+        self.call("GET", path, 404)
+
+    def test_update_event(self):
+        """Update an event"""
+        event = self.create({"title": "Minimal"})
+        other = self.create({"title": "Other event", "inviteeIds": ["u1"]})
+        path = self.path(event["id"])
+        populated = {
+            "title": "Populated",
+            "description": "Details",
+            "inviteeIds": ["u2"],
+        }
+        self.call("PUT", path, 200, populated)
+        replaced = self.call("PUT", path, 200, {"title": "Reset"})
+        self.assert_event(replaced, event["id"], {"title": "Reset"})
+
+        body = {
+            "title": "  Café team dinner  ",
+            "description": 'Line one\n"Bring snacks" ☕',
+            "inviteeIds": ["u3", "u1", "u2"],
+        }
+        updated = self.call("PUT", path, 200, body)
+        self.assert_event(updated, event["id"], body)
+
+        cleared = self.call(
+            "PUT",
+            path,
+            200,
+            {"title": "Clear", "description": "", "inviteeIds": []},
+        )
+        self.assert_event(cleared, event["id"], {"title": "Clear"})
+        self.assertEqual(self.call("GET", path, 200), cleared)
+        self.assertEqual(self.call("GET", self.path(other["id"]), 200), other)
+        self.assertEqual(
+            sorted(self.call("GET", "/api/users", 200), key=lambda user: user["id"]),
+            USERS,
+        )
+
+    def test_update_rejects_invalid_data(self):
+        """Update rejects invalid data"""
+        event = self.create()
+        path = self.path(event["id"])
+
+        for invitees in [["u1", "unknown"], ["u2", "u2"], [""]]:
+            with self.subTest(invitees=invitees):
+                self.call(
+                    "PUT",
+                    path,
+                    400,
+                    {
+                        "title": "Do not save",
+                        "description": "Rejected",
+                        "inviteeIds": invitees,
+                    },
+                )
+                self.assertEqual(self.call("GET", path, 200), event)
+
+        self.call("PUT", path, 400, {"title": "Do not save", "inviteeIds": [42]})
+        self.assertEqual(self.call("GET", path, 200), event)
+
