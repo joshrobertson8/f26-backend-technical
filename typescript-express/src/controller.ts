@@ -24,3 +24,18 @@ export function controller(service: EventService, store: MemoryStore): Router {
     response.status(201).json(event);
   });
 
+  router.get("/events/:id", (request, response) => {
+    const eventId = request.params.id;
+    const event = service.read(eventId);
+
+    response.json(event);
+  });
+
+  router.put("/events/:id", (request, response) => {
+    const eventId = request.params.id;
+    const data = parseEventInput(request.body);
+    const event = service.update(eventId, data);
+
+    response.json(event);
+  });
+
