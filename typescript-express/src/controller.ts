@@ -39,3 +39,13 @@ export function controller(service: EventService, store: MemoryStore): Router {
     response.json(event);
   });
 
+  router.delete("/events/:id", (request, response) => {
+    const eventId = request.params.id;
+
+    service.delete(eventId);
+
+    response.status(204).end();
+  });
+
+  return router;
+}
