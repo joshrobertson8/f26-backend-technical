@@ -1,0 +1,6 @@
+{
+  "command": [
+    "node",
+    "src/server.js"
+  ]
+}
