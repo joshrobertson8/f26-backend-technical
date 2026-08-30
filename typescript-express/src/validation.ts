@@ -28,3 +28,13 @@ export function parseEventInput(body: any): EventInput {
     throw new ServiceError(400, "description must be a string");
   }
 
+  let invitees = body.inviteeIds;
+
+  if (invitees === undefined) {
+    invitees = [];
+  }
+
+  if (!Array.isArray(invitees)) {
+    throw new ServiceError(400, "inviteeIds must be a list");
+  }
+
