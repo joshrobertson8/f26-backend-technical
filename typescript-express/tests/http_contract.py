@@ -274,3 +274,51 @@ class CandidateTests(ApiTest):
         self.call("PUT", path, 400, {"title": "Do not save", "inviteeIds": [42]})
         self.assertEqual(self.call("GET", path, 200), event)
 
+        missing = self.path("missing-" + uuid4().hex)
+        self.call(
+            "PUT", missing, 404, {"title": "Missing", "inviteeIds": ["unknown", "unknown"]}
+        )
+
+    def test_delete_event(self):
+        """Delete an event"""
+        body = {
+            "title": "Team dinner",
+            "description": "Friday evening",
+            "inviteeIds": ["u1", "u2"],
+        }
+        event = self.create(body)
+        other = self.create({"title": "Keep this event", "inviteeIds": ["u3"]})
+        self.call("DELETE", self.path(event["id"]), 204)
+        self.call("GET", self.path(event["id"]), 404)
+        self.call("PUT", self.path(event["id"]), 404, {"title": "Deleted"})
+        self.call("DELETE", self.path(event["id"]), 404)
+        self.assertEqual(self.call("GET", self.path(other["id"]), 200), other)
+        self.assertEqual(
+            sorted(self.call("GET", "/api/users", 200), key=lambda user: user["id"]),
+            USERS,
+        )
+
+        later = self.create({"title": "After delete"})
+        self.assertNotEqual(later["id"], event["id"])
+
+    def test_delete_missing_event(self):
+        """Delete reports a missing event"""
+        path = self.path("missing-" + uuid4().hex)
+        self.call("DELETE", path, 404)
+
+
+class ConsoleResult(unittest.TestResult):
+    def __init__(self, verbose=False):
+        super().__init__()
+
+        self.verbose = verbose
+        self.group = None
+        self.passed_count = 0
+        self.failed_count = 0
+        self.error_count = 0
+        self.skipped_count = 0
+        self.saw_unimplemented_service = False
+
+    def startTest(self, test):
+        super().startTest(test)
+
