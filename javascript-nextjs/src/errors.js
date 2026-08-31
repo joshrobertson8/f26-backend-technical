@@ -6,3 +6,8 @@ export class ServiceError extends Error {
   }
 }
 
+export class NotImplementedError extends ServiceError {
+  constructor() {
+    super(501, "Implement the event service");
+  }
+}
