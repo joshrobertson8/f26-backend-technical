@@ -1,0 +1,8 @@
+import { NotImplementedError, ServiceError } from "./errors.js";
+import { Event, EventInput } from "./models.js";
+
+export class EventService {
+  constructor(store) {
+    this.store = store;
+  }
+
