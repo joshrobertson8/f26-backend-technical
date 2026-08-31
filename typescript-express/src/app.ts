@@ -11,3 +11,19 @@ export function createApp() {
   const store = new MemoryStore();
   const service = new EventService(store);
 
+  app.use(express.json());
+  app.use("/api", controller(service, store));
+
+  const handleError: ErrorRequestHandler = (error, request, response, next) => {
+    if (error instanceof ServiceError) {
+      response.status(error.status).json({ error: error.message });
+      return;
+    }
+
+    if (error.type === "entity.parse.failed") {
+      response.status(400).json({ error: "Malformed JSON" });
+      return;
+    }
+
+    console.error(error);
+
