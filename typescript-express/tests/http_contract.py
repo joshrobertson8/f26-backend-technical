@@ -347,3 +347,22 @@ class ConsoleResult(unittest.TestResult):
         if self.verbose:
             message = "".join(traceback.format_exception(*error)).rstrip()
 
+        if case:
+            message = f"Case: {case}\n{message}"
+
+        self.details.append(message)
+
+    def addFailure(self, test, error):
+        super().addFailure(test, error)
+        self.record_problem(error, "FAIL")
+
+    def addError(self, test, error):
+        super().addError(test, error)
+        self.record_problem(error, "ERROR")
+
+    def addSubTest(self, test, subtest, error):
+        super().addSubTest(test, subtest, error)
+
+        if error is None:
+            return
+
