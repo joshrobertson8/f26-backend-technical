@@ -6,3 +6,11 @@ export class EventService {
     this.store = store;
   }
 
+  create(data) {
+    throw new NotImplementedError();
+  }
+
+  read(eventId) {
+    throw new NotImplementedError();
+  }
+
