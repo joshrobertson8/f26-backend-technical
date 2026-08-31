@@ -322,3 +322,28 @@ class ConsoleResult(unittest.TestResult):
     def startTest(self, test):
         super().startTest(test)
 
+        self.status = "PASS"
+        self.details = []
+
+        group = "Server setup"
+        if isinstance(test, CandidateTests):
+            method = test._testMethodName.split("_")[1]
+            group = "Event service: " + method.capitalize()
+
+        if group != self.group:
+            print(f"\n{group}", flush=True)
+            print("-" * len(group), flush=True)
+            self.group = group
+
+    def record_problem(self, error, status, case=None):
+        if self.status != "ERROR":
+            self.status = status
+
+        message = str(error[1]) or error[0].__name__
+
+        if "Received: HTTP 501" in message:
+            self.saw_unimplemented_service = True
+
+        if self.verbose:
+            message = "".join(traceback.format_exception(*error)).rstrip()
+
