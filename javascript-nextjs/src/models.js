@@ -17,3 +17,6 @@ export class Event extends EventInput {
   constructor(id, title, description = "", inviteeIds = []) {
     super(title, description, inviteeIds);
 
+    this.id = id;
+  }
+}
