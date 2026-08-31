@@ -8,3 +8,15 @@ Complete the four methods in [src/service.ts](src/service.ts). The rest of the a
 
 ## create
 
+- Save a new event and return it with a unique ID. Never reuse an ID, even after an event is deleted.
+- If no description or invitees are given, use an empty description and an empty list.
+- Keep the text and invitee order as given.
+- Report an error if an invitee does not exist or appears more than once. Do not save the event in that case.
+
+## read
+
+- Return the event with the given ID.
+- Report an error if it does not exist.
+
+## update
+
