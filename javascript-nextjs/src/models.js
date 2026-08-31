@@ -5,3 +5,15 @@ export class User {
   }
 }
 
+export class EventInput {
+  constructor(title, description = "", inviteeIds = []) {
+    this.title = title;
+    this.description = description;
+    this.inviteeIds = inviteeIds;
+  }
+}
+
+export class Event extends EventInput {
+  constructor(id, title, description = "", inviteeIds = []) {
+    super(title, description, inviteeIds);
+
