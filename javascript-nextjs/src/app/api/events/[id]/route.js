@@ -12,3 +12,11 @@ export async function GET(request, context) {
 export async function PUT(request, context) {
   const params = await context.params;
 
+  return update(request, params.id);
+}
+
+export async function DELETE(request, context) {
+  const params = await context.params;
+
+  return remove(params.id);
+}
