@@ -20,3 +20,11 @@ export async function GET(request: Request, context: RouteContext) {
 export async function PUT(request: Request, context: RouteContext) {
   const params = await context.params;
 
+  return update(request, params.id);
+}
+
+export async function DELETE(request: Request, context: RouteContext) {
+  const params = await context.params;
+
+  return remove(params.id);
+}
