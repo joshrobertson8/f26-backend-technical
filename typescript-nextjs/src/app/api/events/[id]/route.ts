@@ -7,3 +7,16 @@ interface EventParams {
   id: string;
 }
 
+interface RouteContext {
+  params: Promise<EventParams>;
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  const params = await context.params;
+
+  return read(params.id);
+}
+
+export async function PUT(request: Request, context: RouteContext) {
+  const params = await context.params;
+
