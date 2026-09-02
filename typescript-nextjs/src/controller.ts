@@ -11,3 +11,14 @@ function errorResponse(error: unknown) {
     return Response.json({ error: "Malformed JSON" }, { status: 400 });
   }
 
+  console.error(error);
+
+  return Response.json({ error: "Internal server error" }, { status: 500 });
+}
+
+export async function create(request: Request) {
+  try {
+    const body = await request.json();
+    const data = parseEventInput(body);
+    const event = service.create(data);
+
