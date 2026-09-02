@@ -70,3 +70,69 @@ class ApiTest(unittest.TestCase):
     def setUp(self):
         self.created_ids = []
 
+    def tearDown(self):
+        for event_id in self.created_ids:
+            request("DELETE", self.path(event_id))
+
+    @staticmethod
+    def path(event_id):
+        return "/api/events/" + quote(event_id, safe="")
+
+    def call(self, method, path, expected, body=None, raw=None):
+        status, data, wire = request(method, path, body, raw)
+        self.assertEqual(
+            status,
+            expected,
+            f"Request:  {method} {path}\n"
+            f"Expected: HTTP {expected}\n"
+            f"Received: HTTP {status}\n"
+            f"Response: {json.dumps(data, ensure_ascii=False)}",
+        )
+        if expected == 204:
+            self.assertEqual(wire, b"", "204 responses must have no body")
+        if expected >= 400:
+            self.assertIsInstance(data, dict)
+            self.assertIsInstance(data.get("error"), str)
+            self.assertTrue(data["error"].strip())
+        return data
+
+    def create(self, body=None):
+        body = (
+            body
+            if body is not None
+            else {
+                "title": "Team dinner",
+                "description": "Friday evening",
+                "inviteeIds": ["u1", "u2"],
+            }
+        )
+        event = self.call("POST", "/api/events", 201, body)
+        self.assertIsInstance(event, dict)
+        self.assertIsInstance(event.get("id"), str)
+        self.assertTrue(event["id"])
+        self.created_ids.append(event["id"])
+        self.assert_event(event, event["id"], body)
+        return event
+
+    def assert_event(self, event, event_id, body):
+        self.assertEqual(
+            event,
+            {
+                "id": event_id,
+                "title": body["title"],
+                "description": body.get("description", ""),
+                "inviteeIds": body.get("inviteeIds", []),
+            },
+        )
+
+
+class ScaffoldTests(ApiTest):
+    def test_health(self):
+        """Health endpoint responds"""
+        self.assertEqual(self.call("GET", "/api/health", 200), {"status": "ok"})
+
+    def test_seeded_users(self):
+        """Seeded users are available"""
+        users = self.call("GET", "/api/users", 200)
+        self.assertEqual(sorted(users, key=lambda user: user["id"]), USERS)
+
