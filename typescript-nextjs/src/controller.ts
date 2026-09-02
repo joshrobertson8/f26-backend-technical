@@ -44,3 +44,18 @@ export async function update(request: Request, eventId: string) {
     const data = parseEventInput(body);
     const event = service.update(eventId, data);
 
+    return Response.json(event);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export function remove(eventId: string) {
+  try {
+    service.delete(eventId);
+
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
