@@ -14,3 +14,17 @@ export function parseEventInput(body: any): EventInput {
 
   const title = body.title;
 
+  if (typeof title !== "string" || title.trim() === "") {
+    throw new ServiceError(400, "title must be a nonempty string");
+  }
+
+  let description = body.description;
+
+  if (description === undefined) {
+    description = "";
+  }
+
+  if (typeof description !== "string") {
+    throw new ServiceError(400, "description must be a string");
+  }
+
