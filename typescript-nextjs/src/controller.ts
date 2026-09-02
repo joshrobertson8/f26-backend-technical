@@ -22,3 +22,25 @@ export async function create(request: Request) {
     const data = parseEventInput(body);
     const event = service.create(data);
 
+    return Response.json(event, { status: 201 });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export function read(eventId: string) {
+  try {
+    const event = service.read(eventId);
+
+    return Response.json(event);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function update(request: Request, eventId: string) {
+  try {
+    const body = await request.json();
+    const data = parseEventInput(body);
+    const event = service.update(eventId, data);
+
