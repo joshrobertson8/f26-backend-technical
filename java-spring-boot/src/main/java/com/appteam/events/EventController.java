@@ -36,3 +36,17 @@ public class EventController {
         return new ArrayList<>(store.users.values());
     }
 
+    @PostMapping("/events")
+    public ResponseEntity<Event> create(@RequestBody EventInput data) {
+        data.validate();
+
+        Event event = service.create(data);
+
+        return ResponseEntity.status(201).body(event);
+    }
+
+    @GetMapping("/events/{id}")
+    public Event read(@PathVariable String id) {
+        return service.read(id);
+    }
+
