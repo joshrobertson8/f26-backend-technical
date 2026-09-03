@@ -13,3 +13,16 @@ public class MemoryStore {
 
     private int nextId = 1;
 
+    public MemoryStore() {
+        users.put("u1", new User("u1", "Ada"));
+        users.put("u2", new User("u2", "Grace"));
+        users.put("u3", new User("u3", "Linus"));
+    }
+
+    public String generateId() {
+        String eventId = "event-" + nextId;
+        nextId += 1;
+
+        return eventId;
+    }
+}
