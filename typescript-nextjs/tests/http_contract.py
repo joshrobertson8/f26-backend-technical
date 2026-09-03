@@ -458,3 +458,123 @@ class ConsoleResult(unittest.TestResult):
 
         print()
 
+
+@contextlib.contextmanager
+def running_server(base_url):
+    global BASE_URL
+    if base_url:
+        BASE_URL = base_url.rstrip("/")
+        yield
+        return
+    root = Path(__file__).resolve().parent.parent
+    config = json.loads((root / "tests/server.json").read_text())
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    BASE_URL = f"http://127.0.0.1:{port}"
+    command = [
+        arg.format(python=sys.executable, port=port) for arg in config["command"]
+    ]
+    environment = dict(os.environ, PORT=str(port), NEXT_TELEMETRY_DISABLED="1")
+    with tempfile.TemporaryFile(mode="w+b") as log:
+        process = subprocess.Popen(
+            command,
+            cwd=root,
+            env=environment,
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            start_new_session=os.name != "nt",
+        )
+        try:
+            deadline = time.monotonic() + 120
+            while time.monotonic() < deadline:
+                if process.poll() is not None:
+                    raise RuntimeError(
+                        "Server exited during startup; install/build this option first"
+                    )
+                try:
+                    if request("GET", "/api/health")[:2] == (200, {"status": "ok"}):
+                        break
+                except (URLError, TimeoutError, OSError):
+                    pass
+                time.sleep(0.15)
+            else:
+                raise RuntimeError("Server did not become healthy within 120 seconds")
+            yield
+        except Exception as error:
+            log.seek(0)
+            output = log.read().decode(errors="replace")[-12000:].strip()
+            message = str(error)
+
+            if output:
+                message += "\n\nServer output:\n" + output
+
+            raise RuntimeError(message) from error
+        finally:
+            if os.name == "nt":
+                subprocess.run(
+                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            else:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                    process.wait(timeout=5)
+                except ProcessLookupError:
+                    pass
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            log.seek(0)
+            server_log = log.read().decode(errors="replace")
+            if any(
+                marker in server_log
+                for marker in [
+                    "ERROR: AddressSanitizer",
+                    "ERROR: LeakSanitizer",
+                    "runtime error:",
+                ]
+            ):
+                raise RuntimeError("Server sanitizer failure:\n" + server_log[-12000:])
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--smoke", action="store_true", help="Only test the supplied scaffold"
+    )
+    parser.add_argument(
+        "--base-url", help="Use a running server instead of launching one"
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Show all failure details and tracebacks"
+    )
+    args = parser.parse_args()
+
+    suite = unittest.TestSuite(ScaffoldTests(name) for name in [
+        "test_health",
+        "test_seeded_users",
+        "test_malformed_json",
+        "test_request_shape_rejected_before_service",
+    ])
+
+    if not args.smoke:
+        suite.addTests(CandidateTests(name) for name in [
+            "test_create_event",
+            "test_create_rejects_invalid_invitations",
+            "test_read_event",
+            "test_read_missing_event",
+            "test_update_event",
+            "test_update_rejects_invalid_data",
+            "test_delete_event",
+            "test_delete_missing_event",
+        ])
+
+    project = Path(__file__).resolve().parent.parent.name
+    mode = "Server setup only" if args.smoke else "Full API checks"
+    print("\n" + "=" * 72, flush=True)
+    print(f"Event API tests | {project}", flush=True)
+    print(f"{mode} | {suite.countTestCases()} tests", flush=True)
+    print("=" * 72, flush=True)
+
