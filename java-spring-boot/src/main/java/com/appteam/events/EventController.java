@@ -18,3 +18,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class EventController {
 
+    private final EventService service;
+    private final MemoryStore store;
+
+    public EventController(EventService service, MemoryStore store) {
+        this.service = service;
+        this.store = store;
+    }
+
+    @GetMapping("/health")
+    public Map<String, String> health() {
+        return Map.of("status", "ok");
+    }
+
+    @GetMapping("/users")
+    public List<User> users() {
+        return new ArrayList<>(store.users.values());
+    }
+
