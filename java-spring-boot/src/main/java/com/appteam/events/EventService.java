@@ -15,3 +15,15 @@ public class EventService {
         throw new UnsupportedOperationException();
     }
 
+    public Event read(String eventId) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Event update(String eventId, EventInput data) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void delete(String eventId) {
+        throw new UnsupportedOperationException();
+    }
+}
