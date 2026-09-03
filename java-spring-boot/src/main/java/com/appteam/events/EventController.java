@@ -50,3 +50,17 @@ public class EventController {
         return service.read(id);
     }
 
+    @PutMapping("/events/{id}")
+    public Event update(@PathVariable String id, @RequestBody EventInput data) {
+        data.validate();
+
+        return service.update(id, data);
+    }
+
+    @DeleteMapping("/events/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
+
+        return ResponseEntity.noContent().build();
+    }
+}
