@@ -9,3 +9,12 @@ npm test
 
 Check the scaffold only:
 
+```sh
+npm run test:smoke
+```
+
+Reinstall dependencies if needed:
+
+```sh
+npm ci
+```
