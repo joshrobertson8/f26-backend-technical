@@ -14,3 +14,14 @@ public class EventInput {
             throw new ServiceException(400, "Invalid event body");
         }
 
+        if (description == null || inviteeIds == null) {
+            throw new ServiceException(400, "Invalid event body");
+        }
+
+        for (String id : inviteeIds) {
+            if (id == null) {
+                throw new ServiceException(400, "Invalid event body");
+            }
+        }
+    }
+}
