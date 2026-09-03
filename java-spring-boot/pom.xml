@@ -8,3 +8,11 @@
     <relativePath/>
   </parent>
 
+  <groupId>com.appteam</groupId>
+  <artifactId>f26-events</artifactId>
+  <version>1.0.0</version>
+
+  <properties>
+    <java.version>17</java.version>
+  </properties>
+
