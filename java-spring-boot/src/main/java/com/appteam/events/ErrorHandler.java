@@ -19,3 +19,13 @@ public class ErrorHandler {
     public ResponseEntity<ErrorResponse> unfinished() {
         ErrorResponse body = new ErrorResponse("Implement the event service");
 
+        return ResponseEntity.status(501).body(body);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> invalid() {
+        ErrorResponse body = new ErrorResponse("Invalid event body");
+
+        return ResponseEntity.badRequest().body(body);
+    }
+}
