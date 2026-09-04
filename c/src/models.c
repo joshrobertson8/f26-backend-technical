@@ -89,3 +89,34 @@ bool event_input_parse(const char *json, EventInput *out) {
         goto fail;
     }
 
+    const char *title_text = title->valuestring;
+    bool nonblank = false;
+
+    for (size_t i = 0; title_text[i] != '\0'; i++) {
+        if (!isspace((unsigned char)title_text[i])) {
+            nonblank = true;
+            break;
+        }
+    }
+
+    if (!nonblank) {
+        goto fail;
+    }
+
+    if (description != NULL && !cJSON_IsString(description)) {
+        goto fail;
+    }
+
+    if (invitees != NULL && !cJSON_IsArray(invitees)) {
+        goto fail;
+    }
+
+    const char *description_text = "";
+
+    if (description != NULL) {
+        description_text = description->valuestring;
+    }
+
+    out->title = copy_string(title->valuestring);
+    out->description = copy_string(description_text);
+
