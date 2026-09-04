@@ -30,3 +30,15 @@ def main():
 
     print("Java project built.\n", flush=True)
 
+    command = [sys.executable, "tests/http_contract.py"] + sys.argv[1:]
+
+    return subprocess.call(command, cwd=ROOT)
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except OSError as error:
+        print(f"\nRESULT: ERROR\n{error}", file=sys.stderr)
+        print("Run the root setup script first.", file=sys.stderr)
+        sys.exit(1)
