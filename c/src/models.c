@@ -120,3 +120,32 @@ bool event_input_parse(const char *json, EventInput *out) {
     out->title = copy_string(title->valuestring);
     out->description = copy_string(description_text);
 
+    if (out->title == NULL || out->description == NULL) {
+        goto fail;
+    }
+
+    size_t count = 0;
+
+    if (invitees != NULL) {
+        count = (size_t)cJSON_GetArraySize(invitees);
+    }
+
+    if (count > 0) {
+        out->invitee_ids = calloc(count, sizeof(char *));
+
+        if (out->invitee_ids == NULL) {
+            goto fail;
+        }
+    }
+
+    cJSON_ArrayForEach(field, invitees) {
+        if (!cJSON_IsString(field)) {
+            goto fail;
+        }
+
+        out->invitee_ids[out->invitee_count] = copy_string(field->valuestring);
+
+        if (out->invitee_ids[out->invitee_count] == NULL) {
+            goto fail;
+        }
+
