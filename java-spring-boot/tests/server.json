@@ -1,0 +1,7 @@
+{
+  "command": [
+    "java",
+    "-jar",
+    "target/f26-events-1.0.0.jar"
+  ]
+}
