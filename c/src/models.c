@@ -58,3 +58,34 @@ bool event_input_copy(EventInput *out, const EventInput *input) {
 fail:
     event_input_free(out);
 
+    return false;
+}
+
+bool event_input_parse(const char *json, EventInput *out) {
+    *out = (EventInput){0};
+
+    cJSON *root = cJSON_ParseWithOpts(json, NULL, true);
+
+    if (!cJSON_IsObject(root)) {
+        cJSON_Delete(root);
+        return false;
+    }
+
+    const cJSON *field = NULL;
+
+    cJSON_ArrayForEach(field, root) {
+        if (strcmp(field->string, "title") != 0 &&
+            strcmp(field->string, "description") != 0 &&
+            strcmp(field->string, "inviteeIds") != 0) {
+            goto fail;
+        }
+    }
+
+    const cJSON *title = cJSON_GetObjectItemCaseSensitive(root, "title");
+    const cJSON *description = cJSON_GetObjectItemCaseSensitive(root, "description");
+    const cJSON *invitees = cJSON_GetObjectItemCaseSensitive(root, "inviteeIds");
+
+    if (!cJSON_IsString(title)) {
+        goto fail;
+    }
+
