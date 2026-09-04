@@ -26,3 +26,7 @@ def main():
         print(build.stdout)
         print(build.stderr)
 
+        return build.returncode
+
+    print("Java project built.\n", flush=True)
+
