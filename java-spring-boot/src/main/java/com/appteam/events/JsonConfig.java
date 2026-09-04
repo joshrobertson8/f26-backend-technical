@@ -20,3 +20,12 @@ public class JsonConfig {
         mapper.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
+        MutableCoercionConfig strings = mapper.coercionConfigFor(LogicalType.Textual);
+
+        strings.setCoercion(CoercionInputShape.Integer, CoercionAction.Fail);
+        strings.setCoercion(CoercionInputShape.Float, CoercionAction.Fail);
+        strings.setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail);
+
+        return mapper;
+    }
+}
