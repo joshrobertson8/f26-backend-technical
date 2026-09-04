@@ -27,3 +27,10 @@ bool event_input_parse(const char *json, EventInput *out);
 
 bool event_input_copy(EventInput *out, const EventInput *input);
 
+void event_input_free(EventInput *input);
+
+cJSON *event_json(const Event *event);
+
+char *copy_string(const char *value);
+
+#endif
