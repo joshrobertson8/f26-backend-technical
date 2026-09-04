@@ -27,3 +27,34 @@ void event_input_free(EventInput *input) {
     *input = (EventInput){0};
 }
 
+bool event_input_copy(EventInput *out, const EventInput *input) {
+    *out = (EventInput){0};
+    out->title = copy_string(input->title);
+    out->description = copy_string(input->description);
+
+    if (out->title == NULL || out->description == NULL) {
+        goto fail;
+    }
+
+    if (input->invitee_count > 0) {
+        out->invitee_ids = calloc(input->invitee_count, sizeof(char *));
+
+        if (out->invitee_ids == NULL) {
+            goto fail;
+        }
+
+        for (size_t i = 0; i < input->invitee_count; i++) {
+            out->invitee_ids[i] = copy_string(input->invitee_ids[i]);
+            out->invitee_count++;
+
+            if (out->invitee_ids[i] == NULL) {
+                goto fail;
+            }
+        }
+    }
+
+    return true;
+
+fail:
+    event_input_free(out);
+
