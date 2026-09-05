@@ -113,3 +113,32 @@ static bool decode_path(char *path) {
     char *source = path;
     char *destination = path;
 
+    while (*source != '\0' && *source != '?') {
+        if (*source == '%') {
+            if (source[1] == '\0' || source[2] == '\0') {
+                return false;
+            }
+
+            int high = hex_digit(source[1]);
+            int low = hex_digit(source[2]);
+            int value = high * 16 + low;
+
+            if (high < 0 || low < 0 || value == 0) {
+                return false;
+            }
+
+            *destination = (char)value;
+            source += 3;
+        } else {
+            *destination = *source;
+            source += 1;
+        }
+
+        destination += 1;
+    }
+
+    *destination = '\0';
+
+    return true;
+}
+
