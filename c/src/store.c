@@ -92,3 +92,27 @@ bool store_remove_event(MemoryStore *store, const char *id) {
         return false;
     }
 
+    HASH_DEL(store->events, entry);
+    free(entry->event.id);
+    event_input_free(&entry->event.data);
+    free(entry);
+
+    return true;
+}
+
+bool store_has_user(MemoryStore *store, const char *id) {
+    UserEntry *entry = NULL;
+
+    HASH_FIND_STR(store->users, id, entry);
+
+    return entry != NULL;
+}
+
+void store_generate_id(MemoryStore *store, char out[64]) {
+    snprintf(out, 64, "event-%lu", store->next_id);
+    store->next_id += 1;
+}
+
+cJSON *store_users_json(MemoryStore *store) {
+    cJSON *array = cJSON_CreateArray();
+
