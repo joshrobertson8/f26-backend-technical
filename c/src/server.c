@@ -251,3 +251,38 @@ static void handle_client(Socket connection, MemoryStore *store) {
     char method_copy[16];
     char path_copy[2048];
 
+    memcpy(method_copy, method, method_length);
+    method_copy[method_length] = '\0';
+    memcpy(path_copy, path, path_length);
+    path_copy[path_length] = '\0';
+
+    if (!decode_path(path_copy)) {
+        respond(connection, http_error(400));
+        goto done;
+    }
+
+    respond(connection, controller(store, method_copy, path_copy, buffer + header_length));
+
+done:
+    free(buffer);
+}
+
+int main(void) {
+    const char *port_text = getenv("PORT");
+    char *end = NULL;
+    long port = 8000;
+
+    if (port_text != NULL) {
+        port = strtol(port_text, &end, 10);
+
+        if (port_text[0] == '\0' || *end != '\0') {
+            fprintf(stderr, "PORT must be an integer between 1 and 65535\n");
+            return 1;
+        }
+    }
+
+    if (port < 1 || port > 65535) {
+        fprintf(stderr, "PORT must be an integer between 1 and 65535\n");
+        return 1;
+    }
+
