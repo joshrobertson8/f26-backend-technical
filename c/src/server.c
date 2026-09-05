@@ -286,3 +286,31 @@ int main(void) {
         return 1;
     }
 
+    install_signal_handlers(stop_server);
+
+    if (!start_sockets()) {
+        socket_error("socket initialization");
+        return 1;
+    }
+
+    MemoryStore store;
+
+    if (!store_init(&store)) {
+        return 1;
+    }
+
+    Socket listener = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (listener == INVALID_CONNECTION) {
+        socket_error("socket");
+        store_free(&store);
+        return 1;
+    }
+
+    int reuse = 1;
+    setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse));
+    struct sockaddr_in address = {0};
+    address.sin_family = AF_INET;
+    inet_pton(AF_INET, "127.0.0.1", &address.sin_addr);
+    address.sin_port = htons((unsigned short)port);
+
