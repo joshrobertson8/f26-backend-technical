@@ -184,3 +184,39 @@ static void handle_client(Socket connection, MemoryStore *store) {
         previous = used;
     }
 
+    if (header_length < 0 || method_length >= 16 || path_length >= 2048) {
+        respond(connection, http_error(400));
+        goto done;
+    }
+
+    size_t body_length = 0;
+    bool has_length = false;
+
+    for (size_t i = 0; i < count; i++) {
+        if (headers[i].name == NULL) {
+            respond(connection, http_error(400));
+            goto done;
+        }
+
+        if (headers[i].name_len == 17 && strncasecmp(headers[i].name, "Transfer-Encoding", 17) == 0) {
+            respond(connection, http_error(400));
+            goto done;
+        }
+
+        if (headers[i].name_len == 14 && strncasecmp(headers[i].name, "Content-Length", 14) == 0) {
+            if (has_length || headers[i].value_len == 0) {
+                respond(connection, http_error(400));
+                goto done;
+            }
+
+            has_length = true;
+            for (size_t j = 0; j < headers[i].value_len; j++) {
+                char digit = headers[i].value[j];
+
+                if (digit < '0' || digit > '9') {
+                    respond(connection, http_error(400));
+                    goto done;
+                }
+
+                body_length = body_length * 10 + (size_t)(digit - '0');
+
