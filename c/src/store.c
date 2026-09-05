@@ -53,3 +53,21 @@ void store_free(MemoryStore *store) {
 const Event *store_get_event(MemoryStore *store, const char *id) {
     EventEntry *entry = NULL;
 
+    HASH_FIND_STR(store->events, id, entry);
+
+    if (entry == NULL) {
+        return NULL;
+    }
+
+    return &entry->event;
+}
+
+bool store_set_event(MemoryStore *store, const char *id, const EventInput *data) {
+    EventEntry *entry = calloc(1, sizeof(*entry));
+
+    if (entry == NULL) {
+        return false;
+    }
+
+    entry->event.id = copy_string(id);
+
