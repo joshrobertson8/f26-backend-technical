@@ -176,3 +176,29 @@ cJSON *event_json(const Event *event) {
         goto fail;
     }
 
+    cJSON *ids = cJSON_AddArrayToObject(json, "inviteeIds");
+
+    if (ids == NULL) {
+        goto fail;
+    }
+
+    for (size_t i = 0; i < event->data.invitee_count; i++) {
+        cJSON *id = cJSON_CreateString(event->data.invitee_ids[i]);
+
+        if (id == NULL) {
+            goto fail;
+        }
+
+        if (!cJSON_AddItemToArray(ids, id)) {
+            cJSON_Delete(id);
+            goto fail;
+        }
+    }
+
+    return json;
+
+fail:
+    cJSON_Delete(json);
+
+    return NULL;
+}
