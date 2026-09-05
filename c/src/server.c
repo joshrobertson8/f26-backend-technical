@@ -220,3 +220,34 @@ static void handle_client(Socket connection, MemoryStore *store) {
 
                 body_length = body_length * 10 + (size_t)(digit - '0');
 
+                if (body_length > MAX_REQUEST) {
+                    respond(connection, http_error(413));
+                    goto done;
+                }
+            }
+        }
+    }
+
+    if ((size_t)header_length + body_length > MAX_REQUEST) {
+        respond(connection, http_error(413));
+        goto done;
+    }
+
+    while (used < (size_t)header_length + body_length) {
+        int got = (int)recv(connection, buffer + used, (int)((size_t)header_length + body_length - used), 0);
+
+        if (got < 0 && socket_interrupted() && !stopping) {
+            continue;
+        }
+
+        if (got <= 0) {
+            goto done;
+        }
+
+        used += (size_t)got;
+    }
+
+    buffer[(size_t)header_length + body_length] = '\0';
+    char method_copy[16];
+    char path_copy[2048];
+
