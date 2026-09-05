@@ -23,3 +23,33 @@ bool store_init(MemoryStore *store) {
             return false;
         }
 
+        entry->user = seeds[i];
+        HASH_ADD_KEYPTR(hh, store->users, entry->user.id, strlen(entry->user.id), entry);
+    }
+
+    return true;
+}
+
+void store_free(MemoryStore *store) {
+    EventEntry *event;
+    EventEntry *next_event;
+
+    HASH_ITER(hh, store->events, event, next_event) {
+        HASH_DEL(store->events, event);
+        free(event->event.id);
+        event_input_free(&event->event.data);
+        free(event);
+    }
+
+    UserEntry *user;
+    UserEntry *next_user;
+
+    HASH_ITER(hh, store->users, user, next_user) {
+        HASH_DEL(store->users, user);
+        free(user);
+    }
+}
+
+const Event *store_get_event(MemoryStore *store, const char *id) {
+    EventEntry *entry = NULL;
+
