@@ -147,3 +147,22 @@ HttpResponse controller(
             return http_error(500);
         }
 
+        cJSON *json = event_json(event);
+
+        return json_response(200, json);
+    }
+
+    if (strcmp(method, "DELETE") == 0) {
+        ServiceStatus status = service_delete(store, event_id);
+
+        if (status != SERVICE_OK) {
+            return http_error(status);
+        }
+
+        HttpResponse response = {204, NULL};
+
+        return response;
+    }
+
+    return http_error(405);
+}
