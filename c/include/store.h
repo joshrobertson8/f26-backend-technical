@@ -20,3 +20,11 @@ typedef struct {
     unsigned long next_id;
 } MemoryStore;
 
+bool store_init(MemoryStore *store);
+
+void store_free(MemoryStore *store);
+
+const Event *store_get_event(MemoryStore *store, const char *id);
+
+bool store_set_event(MemoryStore *store, const char *id, const EventInput *data);
+
