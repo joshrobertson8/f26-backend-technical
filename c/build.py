@@ -14,3 +14,22 @@ BINARY = ROOT / "build" / ("server.exe" if os.name == "nt" else "server")
 def build(sanitize=False):
     compiler = os.environ.get("CC")
 
+    if not compiler:
+        for name in ["cc", "gcc", "clang"]:
+            compiler = shutil.which(name)
+            if compiler:
+                break
+
+    if not compiler:
+        raise RuntimeError("C compiler missing. Run the root setup script first.")
+
+    sources = [ROOT / "src" / name for name in [
+        "controller.c", "models.c", "server.c", "service.c", "store.c",
+    ]]
+    sources += [ROOT / "vendor/cJSON.c", ROOT / "vendor/picohttpparser.c"]
+    BINARY.parent.mkdir(exist_ok=True)
+
+    command = [compiler, "-std=c11", "-Wall", "-Wextra", "-Wno-unused-parameter", "-O0", "-g"]
+    command += ["-I", str(ROOT / "include"), "-I", str(ROOT / "vendor")]
+    command += [str(source) for source in sources]
+
