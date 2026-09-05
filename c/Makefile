@@ -5,3 +5,9 @@ PYTHON ?= python3
 all:
 	$(PYTHON) build.py
 
+run: all
+	$(PYTHON) build.py run
+
+test:
+	$(PYTHON) build.py test
+
