@@ -15,3 +15,9 @@ ServiceStatus service_create(MemoryStore *store, const EventInput *data, const E
 
 ServiceStatus service_read(MemoryStore *store, const char *event_id, const Event **out);
 
+ServiceStatus service_update(MemoryStore *store, const char *event_id, const EventInput *data,
+                            const Event **out);
+
+ServiceStatus service_delete(MemoryStore *store, const char *event_id);
+
+#endif
