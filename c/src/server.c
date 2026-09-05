@@ -142,3 +142,45 @@ static bool decode_path(char *path) {
     return true;
 }
 
+static void handle_client(Socket connection, MemoryStore *store) {
+    char *buffer = calloc(MAX_REQUEST + 1, 1);
+
+    if (buffer == NULL) {
+        respond(connection, http_error(500));
+        return;
+    }
+
+    size_t used = 0;
+    size_t previous = 0;
+    size_t method_length = 0;
+    size_t path_length = 0;
+    const char *method = NULL;
+    const char *path = NULL;
+    struct phr_header headers[64];
+    int minor = 0;
+    int header_length = -2;
+    size_t count = 0;
+
+    while (header_length == -2) {
+        if (used == MAX_REQUEST) {
+            respond(connection, http_error(413));
+            goto done;
+        }
+
+        int got = (int)recv(connection, buffer + used, (int)(MAX_REQUEST - used), 0);
+
+        if (got < 0 && socket_interrupted() && !stopping) {
+            continue;
+        }
+
+        if (got <= 0) {
+            goto done;
+        }
+
+        used += (size_t)got;
+        count = sizeof(headers) / sizeof(headers[0]);
+        header_length = phr_parse_request(buffer, used, &method, &method_length, &path,
+                                          &path_length, &minor, headers, &count, previous);
+        previous = used;
+    }
+
