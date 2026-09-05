@@ -71,3 +71,24 @@ bool store_set_event(MemoryStore *store, const char *id, const EventInput *data)
 
     entry->event.id = copy_string(id);
 
+    if (entry->event.id == NULL || !event_input_copy(&entry->event.data, data)) {
+        free(entry->event.id);
+        free(entry);
+        return false;
+    }
+
+    store_remove_event(store, id);
+    HASH_ADD_KEYPTR(hh, store->events, entry->event.id, strlen(entry->event.id), entry);
+
+    return true;
+}
+
+bool store_remove_event(MemoryStore *store, const char *id) {
+    EventEntry *entry = NULL;
+
+    HASH_FIND_STR(store->events, id, entry);
+
+    if (entry == NULL) {
+        return false;
+    }
+
