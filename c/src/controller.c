@@ -125,3 +125,25 @@ HttpResponse controller(
 
         cJSON *json = event_json(event);
 
+        return json_response(200, json);
+    }
+
+    if (strcmp(method, "PUT") == 0) {
+        EventInput input;
+
+        if (!event_input_parse(body, &input)) {
+            return http_error(400);
+        }
+
+        const Event *event = NULL;
+        ServiceStatus status = service_update(store, event_id, &input, &event);
+        event_input_free(&input);
+
+        if (status != SERVICE_OK) {
+            return http_error(status);
+        }
+
+        if (event == NULL) {
+            return http_error(500);
+        }
+
