@@ -149,3 +149,30 @@ bool event_input_parse(const char *json, EventInput *out) {
             goto fail;
         }
 
+        out->invitee_count++;
+    }
+
+    cJSON_Delete(root);
+
+    return true;
+
+fail:
+    cJSON_Delete(root);
+    event_input_free(out);
+
+    return false;
+}
+
+cJSON *event_json(const Event *event) {
+    cJSON *json = cJSON_CreateObject();
+
+    if (json == NULL) {
+        return NULL;
+    }
+
+    if (!cJSON_AddStringToObject(json, "id", event->id) ||
+        !cJSON_AddStringToObject(json, "title", event->data.title) ||
+        !cJSON_AddStringToObject(json, "description", event->data.description)) {
+        goto fail;
+    }
+
