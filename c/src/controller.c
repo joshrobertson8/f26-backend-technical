@@ -80,3 +80,24 @@ HttpResponse controller(
             return http_error(400);
         }
 
+        const Event *event = NULL;
+        ServiceStatus status = service_create(store, &input, &event);
+        event_input_free(&input);
+
+        if (status != SERVICE_OK) {
+            return http_error(status);
+        }
+
+        if (event == NULL) {
+            return http_error(500);
+        }
+
+        cJSON *json = event_json(event);
+
+        return json_response(201, json);
+    }
+
+    if (events_path) {
+        return http_error(405);
+    }
+
