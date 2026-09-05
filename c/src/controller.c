@@ -53,3 +53,30 @@ static HttpResponse json_response(int status, cJSON *json) {
     return response;
 }
 
+HttpResponse controller(
+    MemoryStore *store,
+    const char *method,
+    const char *path,
+    const char *body
+) {
+    if (strcmp(path, "/api/health") == 0 && strcmp(method, "GET") == 0) {
+        HttpResponse response = {200, copy_string("{\"status\":\"ok\"}")};
+
+        return response;
+    }
+
+    if (strcmp(path, "/api/users") == 0 && strcmp(method, "GET") == 0) {
+        cJSON *users = store_users_json(store);
+
+        return json_response(200, users);
+    }
+
+    bool events_path = strcmp(path, "/api/events") == 0;
+
+    if (events_path && strcmp(method, "POST") == 0) {
+        EventInput input;
+
+        if (!event_input_parse(body, &input)) {
+            return http_error(400);
+        }
+
