@@ -8,3 +8,13 @@ typedef struct {
     char *body;
 } HttpResponse;
 
+HttpResponse controller(
+    MemoryStore *store,
+    const char *method,
+    const char *path,
+    const char *body
+);
+
+HttpResponse http_error(int status);
+
+#endif
