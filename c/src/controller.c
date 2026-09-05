@@ -33,3 +33,23 @@ HttpResponse http_error(int status) {
 
     HttpResponse response = {status, body};
 
+    return response;
+}
+
+static HttpResponse json_response(int status, cJSON *json) {
+    if (json == NULL) {
+        return http_error(500);
+    }
+
+    char *body = cJSON_PrintUnformatted(json);
+    cJSON_Delete(json);
+
+    if (body == NULL) {
+        return http_error(500);
+    }
+
+    HttpResponse response = {status, body};
+
+    return response;
+}
+
