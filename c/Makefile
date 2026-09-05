@@ -11,3 +11,11 @@ run: all
 test:
 	$(PYTHON) build.py test
 
+smoke:
+	$(PYTHON) build.py smoke
+
+sanitize:
+	$(PYTHON) build.py --sanitize smoke
+
+clean:
+	$(PYTHON) build.py clean
