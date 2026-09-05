@@ -11,3 +11,7 @@ typedef enum {
     SERVICE_NOT_IMPLEMENTED = 501
 } ServiceStatus;
 
+ServiceStatus service_create(MemoryStore *store, const EventInput *data, const Event **out);
+
+ServiceStatus service_read(MemoryStore *store, const char *event_id, const Event **out);
+
