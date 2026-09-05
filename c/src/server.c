@@ -72,3 +72,44 @@ static void respond(Socket connection, HttpResponse response) {
         body = "";
     }
 
+    char headers[512];
+    int length = snprintf(
+        headers,
+        sizeof(headers),
+        "HTTP/1.1 %d %s\r\n"
+        "Content-Type: application/json\r\n"
+        "Content-Length: %zu\r\n"
+        "Connection: close\r\n"
+        "Cache-Control: no-store\r\n\r\n",
+        response.status,
+        reason,
+        strlen(body)
+    );
+
+    if (length > 0 && (size_t)length < sizeof(headers) && send_all(connection, headers, (size_t)length)) {
+        send_all(connection, body, strlen(body));
+    }
+
+    free(response.body);
+}
+
+static int hex_digit(char c) {
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    }
+
+    if (c >= 'a' && c <= 'f') {
+        return c - 'a' + 10;
+    }
+
+    if (c >= 'A' && c <= 'F') {
+        return c - 'A' + 10;
+    }
+
+    return -1;
+}
+
+static bool decode_path(char *path) {
+    char *source = path;
+    char *destination = path;
+
