@@ -28,3 +28,12 @@ const Event *store_get_event(MemoryStore *store, const char *id);
 
 bool store_set_event(MemoryStore *store, const char *id, const EventInput *data);
 
+bool store_remove_event(MemoryStore *store, const char *id);
+
+bool store_has_user(MemoryStore *store, const char *id);
+
+void store_generate_id(MemoryStore *store, char out[64]);
+
+cJSON *store_users_json(MemoryStore *store);
+
+#endif
