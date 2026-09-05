@@ -116,3 +116,29 @@ void store_generate_id(MemoryStore *store, char out[64]) {
 cJSON *store_users_json(MemoryStore *store) {
     cJSON *array = cJSON_CreateArray();
 
+    if (array == NULL) {
+        return NULL;
+    }
+
+    UserEntry *entry;
+    UserEntry *next;
+
+    HASH_ITER(hh, store->users, entry, next) {
+        cJSON *user = cJSON_CreateObject();
+
+        if (user == NULL || !cJSON_AddStringToObject(user, "id", entry->user.id) ||
+            !cJSON_AddStringToObject(user, "name", entry->user.name)) {
+            cJSON_Delete(user);
+            cJSON_Delete(array);
+            return NULL;
+        }
+
+        if (!cJSON_AddItemToArray(array, user)) {
+            cJSON_Delete(user);
+            cJSON_Delete(array);
+            return NULL;
+        }
+    }
+
+    return array;
+}
