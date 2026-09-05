@@ -101,3 +101,27 @@ HttpResponse controller(
         return http_error(405);
     }
 
+    if (strncmp(path, "/api/events/", 12) != 0) {
+        return http_error(404);
+    }
+
+    const char *event_id = path + 12;
+
+    if (event_id[0] == '\0' || strchr(event_id, '/') != NULL) {
+        return http_error(404);
+    }
+
+    if (strcmp(method, "GET") == 0) {
+        const Event *event = NULL;
+        ServiceStatus status = service_read(store, event_id, &event);
+
+        if (status != SERVICE_OK) {
+            return http_error(status);
+        }
+
+        if (event == NULL) {
+            return http_error(500);
+        }
+
+        cJSON *json = event_json(event);
+
