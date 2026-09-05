@@ -314,3 +314,37 @@ int main(void) {
     inet_pton(AF_INET, "127.0.0.1", &address.sin_addr);
     address.sin_port = htons((unsigned short)port);
 
+    if (bind(listener, (struct sockaddr *)&address, sizeof(address)) < 0 ||
+        listen(listener, 16) < 0) {
+        socket_error("bind/listen");
+        close_socket(listener);
+        store_free(&store);
+        return 1;
+    }
+
+    printf("Event API: http://127.0.0.1:%ld/api\n", port);
+    fflush(stdout);
+
+    while (!stopping) {
+        Socket client = accept(listener, NULL, NULL);
+
+        if (client == INVALID_CONNECTION) {
+            if (socket_interrupted()) {
+                continue;
+            }
+
+            socket_error("accept");
+            break;
+        }
+
+        set_socket_timeout(client);
+        handle_client(client, &store);
+        close_socket(client);
+    }
+
+    close_socket(listener);
+    store_free(&store);
+    stop_sockets();
+
+    return 0;
+}
