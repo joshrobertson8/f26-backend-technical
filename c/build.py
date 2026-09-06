@@ -66,3 +66,18 @@ def main():
 
     build(args.sanitize)
 
+    if args.action in ["test", "smoke"]:
+        command = [sys.executable, str(ROOT / "tests/http_contract.py")]
+        if args.action == "smoke":
+            command.append("--smoke")
+        return subprocess.call(command, cwd=ROOT)
+
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except (RuntimeError, subprocess.CalledProcessError) as error:
+        print(f"\n[ERROR] {error}", file=sys.stderr)
+        sys.exit(1)
