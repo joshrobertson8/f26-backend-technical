@@ -31,3 +31,25 @@ def main():
         "c": ["python3", "build.py", "test"],
     }
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("option", nargs="?", choices=options)
+    args = parser.parse_args()
+    selected = [args.option] if args.option else list(options)
+
+    for folder in selected:
+        command = options[folder]
+        result = run(command, folder)
+        print(result.stdout, flush=True)
+        unfinished = (
+            result.returncode == 1
+            and "Passed: 4  |  Failed: 8  |  Errors: 0" in result.stdout
+            and "HTTP 501" in result.stdout
+        )
+        completed = (
+            result.returncode == 0
+            and "Passed: 12  |  Failed: 0  |  Errors: 0" in result.stdout
+        )
+        if not (unfinished or completed):
+            raise RuntimeError(f"{folder}: the documented test command did not run correctly")
+        print(f"[PASS] {folder}: candidate test command works", flush=True)
+
