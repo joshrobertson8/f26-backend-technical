@@ -4,3 +4,12 @@ Run the installer in `setup/` from the repository root and select C. Setup opens
 This command builds the latest code and starts and stops the test server automatically.
 Works on Windows, macOS, and Linux.
 
+```sh
+python3 build.py test
+```
+
+Check the scaffold only:
+
+```sh
+python3 build.py smoke
+```
