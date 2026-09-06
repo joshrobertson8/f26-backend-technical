@@ -33,3 +33,16 @@ def build(sanitize=False):
     command += ["-I", str(ROOT / "include"), "-I", str(ROOT / "vendor")]
     command += [str(source) for source in sources]
 
+    if sanitize:
+        if os.name == "nt":
+            raise RuntimeError("Sanitizer mode is available on macOS/Linux.")
+        command += ["-fsanitize=address,undefined", "-fno-omit-frame-pointer"]
+
+    if os.name == "nt":
+        command += ["-lws2_32"]
+
+    command += ["-o", str(BINARY)]
+    print("Building C server...", flush=True)
+    subprocess.run(command, cwd=ROOT, check=True)
+    print("C server built.", flush=True)
+
