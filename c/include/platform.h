@@ -69,3 +69,22 @@ static bool start_sockets(void) {
     return true;
 }
 
+static void stop_sockets(void) {
+}
+
+static void close_socket(Socket connection) {
+    close(connection);
+}
+
+static bool socket_interrupted(void) {
+    return errno == EINTR;
+}
+
+static void socket_error(const char *operation) {
+    perror(operation);
+}
+
+static void set_socket_timeout(Socket connection) {
+    struct timeval timeout = {0};
+    timeout.tv_sec = 5;
+
