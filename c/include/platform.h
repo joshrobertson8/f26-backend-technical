@@ -88,3 +88,20 @@ static void set_socket_timeout(Socket connection) {
     struct timeval timeout = {0};
     timeout.tv_sec = 5;
 
+    setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(connection, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+}
+
+static void install_signal_handlers(void (*handler)(int)) {
+    struct sigaction action = {0};
+    action.sa_handler = handler;
+    sigemptyset(&action.sa_mask);
+
+    sigaction(SIGINT, &action, NULL);
+    sigaction(SIGTERM, &action, NULL);
+    signal(SIGPIPE, SIG_IGN);
+}
+
+#endif
+
+#endif
