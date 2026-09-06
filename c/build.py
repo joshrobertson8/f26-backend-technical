@@ -46,3 +46,23 @@ def build(sanitize=False):
     subprocess.run(command, cwd=ROOT, check=True)
     print("C server built.", flush=True)
 
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("action", nargs="?", default="build", choices=["build", "run", "test", "smoke", "clean"])
+    parser.add_argument("--sanitize", action="store_true")
+    args = parser.parse_args()
+
+    if args.action == "clean":
+        shutil.rmtree(ROOT / "build", ignore_errors=True)
+        return 0
+
+    if args.action == "run":
+        if not BINARY.exists():
+            build(args.sanitize)
+        if os.name != "nt":
+            os.execv(str(BINARY), [str(BINARY)])
+        return subprocess.call([str(BINARY)], cwd=ROOT)
+
+    build(args.sanitize)
+
