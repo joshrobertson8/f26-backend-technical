@@ -422,3 +422,39 @@ class ConsoleResult(unittest.TestResult):
         if hidden:
             print(f"          Additional details hidden: {hidden}. Use --verbose to see all.")
 
+        if self.details:
+            print(flush=True)
+
+    def print_summary(self, elapsed):
+        counts = (
+            f"Passed: {self.passed_count}  |  Failed: {self.failed_count}  |  "
+            f"Errors: {self.error_count}"
+        )
+        if self.skipped_count:
+            counts += f"  |  Skipped: {self.skipped_count}"
+
+        outcome = "PASSED" if self.wasSuccessful() else "FAILED"
+        if self.wasSuccessful() and self.skipped_count:
+            outcome = "FINISHED WITH SKIPS"
+
+        print("\n" + "=" * 72)
+        print(f"RESULT: {outcome}")
+        print(counts)
+        print(f"Total: {self.testsRun} tests  |  Time: {elapsed:.2f}s")
+        print("=" * 72)
+
+        if self.saw_unimplemented_service:
+            print("\nHTTP 501 means a service method is not implemented yet.")
+            print("Complete the CRUD methods in the service file, then run the tests again.")
+        elif not self.wasSuccessful():
+            print("\nReview the failures and errors above, then run the tests again.")
+        elif self.skipped_count:
+            print("\nRun complete. Some checks were skipped.")
+        elif self.wasSuccessful():
+            print("\nAll checks passed.")
+
+        if self.failed_count or self.error_count:
+            print("For full tracebacks: python3 tests/http_contract.py --verbose")
+
+        print()
+
