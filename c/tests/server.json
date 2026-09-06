@@ -1,0 +1,7 @@
+{
+  "command": [
+    "{python}",
+    "build.py",
+    "run"
+  ]
+}
