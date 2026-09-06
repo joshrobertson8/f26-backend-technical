@@ -48,3 +48,24 @@ static void set_socket_timeout(Socket connection) {
     setsockopt(connection, SOL_SOCKET, SO_SNDTIMEO, (const char *)&timeout, sizeof(timeout));
 }
 
+static void install_signal_handlers(void (*handler)(int)) {
+    signal(SIGINT, handler);
+    signal(SIGTERM, handler);
+}
+
+#else
+
+#include <arpa/inet.h>
+#include <errno.h>
+#include <strings.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+typedef int Socket;
+#define INVALID_CONNECTION (-1)
+
+static bool start_sockets(void) {
+    return true;
+}
+
