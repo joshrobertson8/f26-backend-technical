@@ -29,3 +29,22 @@ static void stop_sockets(void) {
     WSACleanup();
 }
 
+static void close_socket(Socket connection) {
+    closesocket(connection);
+}
+
+static bool socket_interrupted(void) {
+    return WSAGetLastError() == WSAEINTR;
+}
+
+static void socket_error(const char *operation) {
+    fprintf(stderr, "%s: Windows socket error %d\n", operation, WSAGetLastError());
+}
+
+static void set_socket_timeout(Socket connection) {
+    DWORD timeout = 5000;
+
+    setsockopt(connection, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout));
+    setsockopt(connection, SOL_SOCKET, SO_SNDTIMEO, (const char *)&timeout, sizeof(timeout));
+}
+
