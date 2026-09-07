@@ -211,3 +211,53 @@ def install_node():
     else:
         raise SetupError("No compatible Node.js 22 download was found.")
 
+    node_dir = TOOLS / "node" if WINDOWS else TOOLS / "node/bin"
+    add_path(node_dir)
+    node = node_dir / ("node.exe" if WINDOWS else "node")
+    npm_cli = TOOLS / "node/node_modules/npm/bin/npm-cli.js" if WINDOWS else TOOLS / "node/lib/node_modules/npm/bin/npm-cli.js"
+    if not capture([node, "--version"]) or not npm_cli.is_file():
+        raise SetupError("The downloaded Node.js runtime could not run on this OS.")
+    return node, npm_cli
+
+
+def java_home_is_valid(home):
+    javac = home / "bin" / ("javac.exe" if WINDOWS else "javac")
+    java = home / "bin" / ("java.exe" if WINDOWS else "java")
+    match = re.search(r"javac (\d+)", capture([javac, "-version"]))
+    return match and 17 <= int(match.group(1)) <= 25 and bool(capture([java, "-version"]))
+
+
+def install_java():
+    candidates = [TOOLS / "java", TOOLS / "java/Contents/Home"]
+    if ENV.get("JAVA_HOME"):
+        candidates.append(Path(ENV["JAVA_HOME"]))
+
+    java = find("java")
+    if java:
+        properties = capture([java, "-XshowSettings:properties", "-version"])
+        match = re.search(r"^\s*java.home = (.+)$", properties, re.MULTILINE)
+        if match:
+            candidates.append(Path(match.group(1).strip()))
+
+    for home in candidates:
+        if java_home_is_valid(home):
+            ENV["JAVA_HOME"] = str(home)
+            add_path(home / "bin")
+            print(f"[ OK] {capture([home / 'bin/javac', '-version']).strip()}")
+            return home
+
+    if SYSTEM == "Linux" and Path("/etc/alpine-release").exists():
+        install_packages(["openjdk21-jdk"])
+        home = Path("/usr/lib/jvm/java-21-openjdk")
+    else:
+        target = {"Darwin": "mac", "Linux": "linux", "Windows": "windows"}[SYSTEM]
+        arch = "aarch64" if architecture() == "arm64" else "x64"
+        url = f"https://api.adoptium.net/v3/assets/latest/21/hotspot?architecture={arch}&image_type=jdk&os={target}&vendor=eclipse"
+        assets = json.loads(fetch(url))
+        if not assets:
+            raise SetupError("No compatible Temurin JDK 21 download was found.")
+        package = assets[0]["binary"]["package"]
+        archive = download(package["link"], package["name"], package["checksum"])
+        unpack(archive, TOOLS / "java")
+        home = TOOLS / "java/Contents/Home" if SYSTEM == "Darwin" else TOOLS / "java"
+
