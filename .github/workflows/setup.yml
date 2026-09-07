@@ -43,3 +43,37 @@ jobs:
           done
           python3 -m unittest discover -s setup/tests -v
 
+      - name: Install and check tools on Windows
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy -Scope Process Bypass -Force
+          $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot;$env:SystemRoot\System32\WindowsPowerShell\v1.0"
+          $env:JAVA_HOME = ""
+          $env:CC = ""
+          $env:MSYS2_ROOT = "C:\f26-msys64"
+          $ProjectRoot = (Get-Location).Path
+          foreach ($name in @("py.exe", "python.exe", "python3.exe")) {
+            $tool = Get-Command $name -CommandType Application -ErrorAction SilentlyContinue
+            if ($tool) {
+              Rename-Item -LiteralPath $tool.Source -NewName ($tool.Name + ".f26-disabled")
+            }
+          }
+          foreach ($option in @("python-fastapi", "javascript-express", "typescript-express", "javascript-nextjs", "typescript-nextjs", "java-spring-boot", "c")) {
+            .\setup\setup.ps1 -Option $option
+            Set-Location -LiteralPath $ProjectRoot
+            python3 setup/check.py $option
+            if ($LASTEXITCODE -ne 0) { throw "Candidate commands failed." }
+            .\setup\setup.ps1 -Option $option
+            Set-Location -LiteralPath $ProjectRoot
+          }
+          python3 -m unittest discover -s setup/tests -v
+          if ($LASTEXITCODE -ne 0) { throw "Installer checks failed." }
+
+      - name: Keep installer logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: setup-logs-${{ matrix.os }}
+          path: events workspace/setup/.tools/logs
+          include-hidden-files: true
