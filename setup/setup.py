@@ -507,3 +507,29 @@ def main(arguments=None):
     TOOLS.mkdir(exist_ok=True)
     print(f"\nSetting up {OPTIONS[folder]} - {SYSTEM} {platform.machine()}\n", flush=True)
 
+    python = python_runtime()
+    interpreter = python
+    java_home = None
+    compiler = None
+    venv = None
+    ENV["NEXT_TELEMETRY_DISABLED"] = "1"
+
+    if folder == "python-fastapi":
+        python, interpreter = prepare_python()
+        venv = ROOT / "python-fastapi/.venv"
+
+    elif folder == "c":
+        install_compiler()
+        compiler = ENV["CC"]
+        run("Build C server", [python, ROOT / "c/build.py"])
+
+    elif folder == "java-spring-boot":
+        java_home = install_java()
+
+    else:
+        node, npm_cli = install_node()
+        run(f"Install {folder} dependencies", [node, npm_cli, "ci"], ROOT / folder)
+
+        if folder != "javascript-express":
+            run(f"Build {folder}", [node, npm_cli, "run", "build"], ROOT / folder)
+
