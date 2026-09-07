@@ -330,3 +330,94 @@ def install_compiler():
             print(f"[ OK] C compiler: {compiler}")
             return
 
+    if SYSTEM == "Darwin":
+        print("[WAIT] Complete the Xcode Command Line Tools installer if it opens.", flush=True)
+        subprocess.run(["xcode-select", "--install"], check=False)
+        deadline = time.monotonic() + 3600
+        while time.monotonic() < deadline:
+            compiler = find("cc")
+            if compiler and compiler_works(compiler):
+                ENV["CC"] = compiler
+                return
+            time.sleep(10)
+        raise SetupError("Xcode Command Line Tools are not ready. Finish the installer and rerun setup.")
+
+    if SYSTEM == "Linux":
+        manager = next((name for name in ["apt-get", "dnf", "yum", "pacman", "zypper", "apk"] if find(name)), None)
+        packages = ["gcc", "make"]
+        if manager == "apt-get":
+            packages = ["build-essential"]
+        elif manager == "apk":
+            packages = ["build-base"]
+        elif manager in ["dnf", "yum", "zypper"]:
+            packages += ["glibc-devel"]
+        install_packages(packages)
+    else:
+        winget = find("winget")
+        if not winget:
+            candidate = Path(ENV.get("LOCALAPPDATA", "")) / "Microsoft/WindowsApps/winget.exe"
+            winget = str(candidate) if candidate.is_file() else None
+        if not winget:
+            run("Install Windows Package Manager", ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", SETUP / "setup.ps1", "-WinGetOnly"])
+            winget = find("winget")
+            if not winget:
+                candidate = Path(ENV.get("LOCALAPPDATA", "")) / "Microsoft/WindowsApps/winget.exe"
+                winget = str(candidate) if candidate.is_file() else None
+        if not winget:
+            raise SetupError("Windows Package Manager did not install. Restart Windows and rerun setup/setup.cmd.")
+        msys_root = Path(ENV.get("MSYS2_ROOT", "C:/msys64"))
+        bash = msys_root / "usr/bin/bash.exe"
+        if not bash.is_file():
+            run("Install MSYS2", [winget, "install", "--id", "MSYS2.MSYS2", "--exact", "--source", "winget", "--architecture", architecture(), "--silent", "--accept-package-agreements", "--accept-source-agreements", "--location", msys_root])
+        if not bash.is_file():
+            raise SetupError(f"MSYS2 was not found at {msys_root}. Set MSYS2_ROOT to its installation directory.")
+        ENV["MSYSTEM"] = "CLANGARM64" if architecture() == "arm64" else "UCRT64"
+        ENV["CHERE_INVOKING"] = "1"
+        run("Initialize MSYS2", [bash, "-lc", "true"])
+        run("Update MSYS2 core", [bash, "-lc", "pacman --noconfirm -Syuu"])
+        run("Update MSYS2 packages", [bash, "-lc", "pacman --noconfirm -Syuu"])
+        package = "mingw-w64-clang-aarch64-clang" if architecture() == "arm64" else "mingw-w64-ucrt-x86_64-gcc"
+        run("Install Windows C compiler", [bash, "-lc", f"pacman --noconfirm -S --needed {package}"])
+        subdir = "clangarm64" if architecture() == "arm64" else "ucrt64"
+        add_path(msys_root / subdir / "bin")
+
+    for name in ["cc", "gcc", "clang"]:
+        compiler = find(name)
+        if compiler and compiler_works(compiler):
+            ENV["CC"] = compiler
+            return
+    raise SetupError("C compiler installation did not produce a working compiler and linker.")
+
+
+def python_runtime():
+    python = Path(getattr(sys, "_base_executable", sys.executable)).resolve()
+    if not (3, 9) <= sys.version_info[:2] < (3, 14):
+        raise SetupError("Use Python 3.9–3.13. The bootstrap scripts install Python 3.12 when needed.")
+
+    return python
+
+
+def prepare_python():
+    python = python_runtime()
+    venv = ROOT / "python-fastapi/.venv"
+    executable = venv / ("Scripts/python.exe" if WINDOWS else "bin/python")
+    compatible = capture([executable, "-c", "import sys; print('ready') if (3, 9) <= sys.version_info[:2] < (3, 14) else sys.exit(1)"])
+    if venv.exists() and "ready" not in compatible:
+        backup = venv.with_name(f".venv-backup-{int(time.time())}")
+        venv.rename(backup)
+        print(f"[INFO] Moved an incompatible virtual environment to {backup.name}")
+    if not executable.is_file() or not capture([executable, "-m", "pip", "--version"]):
+        try:
+            run("Create Python virtual environment", [python, "-m", "venv", venv])
+        except SetupError:
+            if SYSTEM != "Linux":
+                raise
+            manager = next((name for name in ["apt-get", "dnf", "yum", "pacman", "zypper", "apk"] if find(name)), None)
+            if manager == "apt-get":
+                install_packages(["python3-venv", "python3-pip"])
+            else:
+                install_packages(["python3-pip"] if manager != "pacman" else ["python-pip"])
+            run("Create Python virtual environment", [python, "-m", "venv", venv])
+    run("Install FastAPI dependencies", [executable, "-m", "pip", "install", "-r", ROOT / "python-fastapi/requirements.txt"])
+    return python, executable
+
