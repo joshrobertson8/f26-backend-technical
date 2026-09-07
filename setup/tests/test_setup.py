@@ -175,3 +175,32 @@ class SetupTests(unittest.TestCase):
                 run = stack.enter_context(patch.object(setup, "run"))
                 stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
 
+                setup.main([folder])
+
+                self.assertEqual((self.root / "selected-folder.txt").read_text().strip(), folder)
+                self.assertEqual(python.call_count, int(folder == "python-fastapi"))
+                self.assertEqual(java.call_count, int(folder == "java-spring-boot"))
+                self.assertEqual(compiler.call_count, int(folder == "c"))
+                self.assertEqual(node.call_count, int(folder.startswith(("javascript-", "typescript-"))))
+                activation.assert_called_once()
+                self.assertEqual(run.call_args.args[0], "Check " + folder)
+                self.assertEqual(run.call_args.args[2], self.root / folder)
+                for call in run.call_args_list:
+                    if call.args[0].startswith(("Install ", "Build ")) and folder != "c":
+                        self.assertEqual(call.args[2], self.root / folder)
+
+    def test_windows_python_selection_activates_its_virtual_environment(self):
+        venv = self.root / "python environment"
+        with patch.object(setup, "WINDOWS", True), patch.object(setup, "PATHS", []), patch.object(setup, "ENV", {}):
+            setup.write_activation(Path("C:/Python/python.exe"), venv=venv)
+            self.assertEqual(setup.PATHS[0], str(venv / "Scripts"))
+
+        script = (self.root / "activate.ps1").read_text(encoding="utf-8-sig")
+        self.assertIn("$env:VIRTUAL_ENV =", script)
+        self.assertIn(str(venv / "Scripts/python.exe"), script)
+
+    @unittest.skipIf(setup.WINDOWS, "POSIX shell handoff")
+    def test_python_commands_use_the_selected_virtual_environment(self):
+        venv = self.root / "python environment"
+        subprocess.run([sys.executable, "-m", "venv", "--without-pip", str(venv)], check=True)
+
