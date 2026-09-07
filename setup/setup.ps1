@@ -49,3 +49,35 @@ if (Get-Command py -ErrorAction SilentlyContinue) {
     }
 }
 
+if (-not $Python) {
+    foreach ($Name in @("python.exe", "python3.exe")) {
+        $Command = Get-Command $Name -ErrorAction SilentlyContinue
+        if ($Command -and $Command.Source -notlike "*WindowsApps*") {
+            try {
+                $Candidate = & $Command.Source -c $Probe 2>$null
+            } catch {
+                continue
+            }
+            if ($LASTEXITCODE -eq 0 -and $Candidate) {
+                $Python = "$Candidate".Trim()
+                break
+            }
+        }
+    }
+}
+
+if (-not $Python) {
+    $env:UV_INSTALL_DIR = Join-Path $Tools "uv"
+    $env:UV_NO_MODIFY_PATH = "1"
+    $env:UV_PYTHON_INSTALL_DIR = Join-Path $Tools "python"
+    $env:UV_PYTHON_BIN_DIR = Join-Path $Tools "bin"
+    $Uv = Join-Path $env:UV_INSTALL_DIR "uv.exe"
+
+    if (-not (Test-Path $Uv)) {
+        Write-Host "Installing the Python bootstrap tool..."
+        $Installer = Join-Path $Tools "install-uv.ps1"
+        Invoke-WebRequest -UseBasicParsing -Uri "https://astral.sh/uv/install.ps1" -OutFile $Installer
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $Installer
+        if ($LASTEXITCODE -ne 0) { throw "Python bootstrap installation failed." }
+    }
+
