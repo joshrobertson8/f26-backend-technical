@@ -1,0 +1,7 @@
+name: Check events setup
+
+on:
+  push:
+    branches: [main, "JR/setup-check-*"]
+  workflow_dispatch:
+
