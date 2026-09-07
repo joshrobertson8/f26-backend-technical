@@ -455,3 +455,31 @@ def write_activation(python, java_home=None, compiler=None, venv=None):
     if java_home is not None:
         values["JAVA_HOME"] = str(java_home)
 
+    if compiler is not None:
+        values["CC"] = str(compiler)
+
+    ENV.update(values)
+    path_prefix = os.pathsep.join(PATHS)
+    if WINDOWS:
+        def quote(value):
+            return "'" + value.replace("'", "''") + "'"
+        lines = [f"$env:PATH = {quote(path_prefix + os.pathsep)} + $env:PATH"]
+        lines += [f"$env:{key} = {quote(value)}" for key, value in values.items()]
+        (TOOLS / "activate.ps1").write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
+    else:
+        lines = [f"export PATH={shlex.quote(path_prefix)}:\"$PATH\""]
+        lines += [f"export {key}={shlex.quote(value)}" for key, value in values.items()]
+        (TOOLS / "activate.sh").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def choose_option(arguments=None):
+    parser = argparse.ArgumentParser(description="Set up one language option.")
+    parser.add_argument("option", nargs="?", choices=OPTIONS, help="Skip the menu and select this folder")
+    args = parser.parse_args(arguments)
+
+    if args.option:
+        return args.option
+
+    folders = list(OPTIONS)
+    print("\nChoose your language:\n", flush=True)
+
