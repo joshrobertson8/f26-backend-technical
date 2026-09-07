@@ -483,3 +483,27 @@ def choose_option(arguments=None):
     folders = list(OPTIONS)
     print("\nChoose your language:\n", flush=True)
 
+    for number, folder in enumerate(folders, start=1):
+        print(f"  {number}. {OPTIONS[folder]}", flush=True)
+
+    while True:
+        try:
+            choice = input("\nSelect an option [1-7]: ").strip()
+        except EOFError:
+            raise SetupError("No selection received. Run setup again and choose an option.")
+
+        if choice in ["1", "2", "3", "4", "5", "6", "7"]:
+            return folders[int(choice) - 1]
+
+        print("Please enter a number from 1 to 7.", flush=True)
+
+
+def main(arguments=None):
+    folder = choose_option(arguments)
+
+    if SYSTEM not in ["Windows", "Darwin", "Linux"]:
+        raise SetupError(f"Unsupported operating system: {SYSTEM}")
+    architecture()
+    TOOLS.mkdir(exist_ok=True)
+    print(f"\nSetting up {OPTIONS[folder]} - {SYSTEM} {platform.machine()}\n", flush=True)
+
