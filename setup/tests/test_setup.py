@@ -204,3 +204,36 @@ class SetupTests(unittest.TestCase):
         venv = self.root / "python environment"
         subprocess.run([sys.executable, "-m", "venv", "--without-pip", str(venv)], check=True)
 
+        with patch.object(setup, "PATHS", []), patch.object(setup, "ENV", {}):
+            setup.write_activation(Path(sys.executable), venv=venv)
+
+        result = subprocess.run(
+            ["bash", "--noprofile", "--norc", "-c", 'source "$1"; python -c "import sys; print(sys.prefix)"', "bash", str(self.root / "activate.sh")],
+            capture_output=True, text=True, check=True,
+        )
+        self.assertEqual(Path(result.stdout.strip()).resolve(), venv.resolve())
+
+    @unittest.skipIf(setup.WINDOWS, "POSIX terminal handoff")
+    def test_setup_opens_a_terminal_with_tools_already_active(self):
+        import pty
+
+        project = self.root / "events workspace"
+        project.mkdir()
+        installer = project / "setup"
+        installer.mkdir()
+        challenge = project / "python-fastapi"
+        challenge.mkdir()
+        (challenge / "candidate.txt").write_text("correct-challenge-directory\n")
+        shutil.copyfile(setup.SETUP / "setup.sh", installer / "setup.sh")
+        (installer / "setup.py").write_text(
+            'from pathlib import Path\n'
+            'tools = Path(__file__).parent / ".tools"\n'
+            '(tools / "activate.sh").write_text("export CANDIDATE_READY=ready-after-setup\\n")\n'
+            '(tools / "selected-folder.txt").write_text("python-fastapi\\n")\n'
+        )
+
+        pid, terminal = pty.fork()
+        if pid == 0:
+            os.chdir(project)
+            os.execvp("bash", ["bash", "setup/setup.sh"])
+
