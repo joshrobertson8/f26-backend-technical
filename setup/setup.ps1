@@ -94,3 +94,10 @@ if ($Option) {
     $SetupArguments += $Option.ToLowerInvariant()
 }
 
+& $Python @SetupArguments
+if ($LASTEXITCODE -ne 0) { throw "Setup did not finish. Read the error above and rerun." }
+
+. (Join-Path $Tools "activate.ps1")
+
+$SelectedFolder = (Get-Content -Raw (Join-Path $Tools "selected-folder.txt")).Trim()
+Set-Location -LiteralPath (Join-Path (Split-Path -Parent $Root) $SelectedFolder)
