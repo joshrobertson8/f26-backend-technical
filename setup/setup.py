@@ -121,3 +121,47 @@ def unpack(archive, destination):
             except ValueError:
                 return False
 
+        if archive.suffix == ".zip":
+            with zipfile.ZipFile(archive) as bundle:
+                for item in bundle.infolist():
+                    if not inside(staging / item.filename):
+                        raise SetupError("Unsafe path in downloaded ZIP archive.")
+                bundle.extractall(staging)
+        else:
+            with tarfile.open(archive) as bundle:
+                for item in bundle.getmembers():
+                    target = staging / item.name
+                    if not inside(target) or item.isdev() or item.isfifo():
+                        raise SetupError("Unsafe path in downloaded tar archive.")
+                    if item.issym() and not inside(target.parent / item.linkname):
+                        raise SetupError("Unsafe symbolic link in downloaded archive.")
+                    if item.islnk() and not inside(staging / item.linkname):
+                        raise SetupError("Unsafe hard link in downloaded archive.")
+                if hasattr(tarfile, "data_filter"):
+                    bundle.extractall(staging, filter="data")
+                else:
+                    bundle.extractall(staging)
+
+        children = list(staging.iterdir())
+        if len(children) != 1 or not children[0].is_dir():
+            raise SetupError("Unexpected tool archive layout.")
+
+        if destination.exists():
+            shutil.rmtree(destination)
+        shutil.move(str(children[0]), destination)
+
+
+def architecture():
+    machine = platform.machine().lower()
+    if machine in ["x86_64", "amd64"]:
+        return "x64"
+    if machine in ["aarch64", "arm64"]:
+        return "arm64"
+    raise SetupError(f"Unsupported CPU: {machine}. Use a 64-bit x64 or ARM64 machine.")
+
+
+def install_node():
+    for directory in [TOOLS / "node", TOOLS / "node/bin"]:
+        if directory.is_dir():
+            add_path(directory)
+
