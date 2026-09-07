@@ -124,3 +124,54 @@ class SetupTests(unittest.TestCase):
             python, _ = setup.prepare_python()
         self.assertEqual(python, real_python.resolve())
 
+    def test_menu_lists_full_names_and_selects_each_option(self):
+        for number, folder in enumerate(setup.OPTIONS, start=1):
+            with self.subTest(folder=folder):
+                with patch("builtins.input", return_value=str(number)):
+                    with contextlib.redirect_stdout(io.StringIO()) as output:
+                        self.assertEqual(setup.choose_option([]), folder)
+                for name in setup.OPTIONS.values():
+                    self.assertIn(name, output.getvalue())
+
+    def test_menu_retries_invalid_input(self):
+        with patch("builtins.input", side_effect=["invalid", "0", "8", "2"]):
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(setup.choose_option([]), "javascript-express")
+
+    def test_menu_handles_missing_input(self):
+        with patch("builtins.input", side_effect=EOFError):
+            with contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(setup.SetupError, "No selection"):
+                    setup.choose_option([])
+
+    def test_invalid_option_does_not_install_anything(self):
+        with patch.object(setup, "python_runtime") as runtime:
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    setup.main(["unknown"])
+        self.assertEqual(error.exception.code, 2)
+        runtime.assert_not_called()
+
+    def test_activation_does_not_require_java_or_a_compiler(self):
+        with patch.object(setup, "WINDOWS", True), patch.object(setup, "PATHS", []):
+            setup.write_activation(Path("C:/Tools/python.exe"))
+        script = (self.root / "activate.ps1").read_text(encoding="utf-8-sig")
+        self.assertIn("F26_PYTHON", script)
+        self.assertNotIn("JAVA_HOME", script)
+        self.assertNotIn("$env:CC", script)
+
+    def test_each_option_only_prepares_its_own_dependencies(self):
+        for folder in setup.OPTIONS:
+            with self.subTest(folder=folder), contextlib.ExitStack() as stack:
+                stack.enter_context(patch.object(setup, "ROOT", self.root))
+                stack.enter_context(patch.object(setup, "ENV", {"CC": "compiler"}))
+                stack.enter_context(patch.object(setup, "architecture", return_value="x64"))
+                stack.enter_context(patch.object(setup, "python_runtime", return_value=Path("python")))
+                python = stack.enter_context(patch.object(setup, "prepare_python", return_value=(Path("python"), Path("venv/python"))))
+                node = stack.enter_context(patch.object(setup, "install_node", return_value=(Path("node"), Path("npm"))))
+                java = stack.enter_context(patch.object(setup, "install_java", return_value=Path("jdk")))
+                compiler = stack.enter_context(patch.object(setup, "install_compiler"))
+                activation = stack.enter_context(patch.object(setup, "write_activation"))
+                run = stack.enter_context(patch.object(setup, "run"))
+                stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+
