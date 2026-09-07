@@ -53,3 +53,12 @@ def main():
             raise RuntimeError(f"{folder}: the documented test command did not run correctly")
         print(f"[PASS] {folder}: candidate test command works", flush=True)
 
+    print(f"\nAll {len(selected)} selected test commands work.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (RuntimeError, OSError, subprocess.TimeoutExpired) as error:
+        print(f"\n[ERROR] {error}", file=sys.stderr)
+        sys.exit(1)
