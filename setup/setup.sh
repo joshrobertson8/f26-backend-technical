@@ -84,3 +84,13 @@ if [ -z "$PYTHON" ]; then
     PYTHON="$("$UV_INSTALL_DIR/uv" python find --managed-python 3.12)"
 fi
 
+"$PYTHON" "$SETUP/setup.py" "$@"
+
+source "$TOOLS/activate.sh"
+
+if [ -t 0 ] && [ -t 1 ]; then
+    cd "$ROOT/$(cat "$TOOLS/selected-folder.txt")"
+    echo "Tools are active. Opening your prepared terminal. Type exit to leave."
+    export BASH_SILENCE_DEPRECATION_WARNING=1
+    exec bash --noprofile --norc -i
+fi
