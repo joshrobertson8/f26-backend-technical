@@ -16,3 +16,12 @@ macOS / Linux (Bash or Zsh):
 
 Windows 10/11 (PowerShell; ARM64 requires Windows 11):
 
+```powershell
+.\setup\setup.cmd
+```
+
+Setup leaves you inside your selected challenge folder with the tools ready to use.
+Run setup again when you open a new terminal. Type `exit` to leave the prepared terminal.
+
+Run the test command printed by setup or listed in the folder's `commands.md`.
+Tests start and stop their server automatically. Setup supports x64 and ARM64.
