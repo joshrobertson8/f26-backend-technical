@@ -81,3 +81,16 @@ if (-not $Python) {
         if ($LASTEXITCODE -ne 0) { throw "Python bootstrap installation failed." }
     }
 
+    & $Uv python install 3.12
+    if ($LASTEXITCODE -ne 0) { throw "Python installation failed." }
+
+    $Python = (& $Uv python find --managed-python 3.12).Trim()
+    if ($LASTEXITCODE -ne 0) { throw "The installed Python could not be found." }
+}
+
+$SetupArguments = @((Join-Path $Root "setup.py"))
+
+if ($Option) {
+    $SetupArguments += $Option.ToLowerInvariant()
+}
+
