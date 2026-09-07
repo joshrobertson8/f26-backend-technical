@@ -29,3 +29,17 @@ jobs:
         with:
           path: events workspace
 
+      - name: Install and check tools on macOS and Linux
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+          unset JAVA_HOME CC
+          for option in python-fastapi javascript-express typescript-express javascript-nextjs typescript-nextjs java-spring-boot c; do
+            ./setup/setup.sh "$option"
+            source setup/.tools/activate.sh
+            python3 setup/check.py "$option"
+            ./setup/setup.sh "$option"
+          done
+          python3 -m unittest discover -s setup/tests -v
+
