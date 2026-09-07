@@ -70,3 +70,17 @@ if [ -z "$PYTHON" ]; then
     export UV_PYTHON_BIN_DIR="$TOOLS/bin"
     export PATH="$UV_PYTHON_BIN_DIR:$PATH"
 
+    if [ ! -x "$UV_INSTALL_DIR/uv" ]; then
+        echo "Installing the Python bootstrap tool..."
+        if command -v curl >/dev/null 2>&1; then
+            curl -fLsS --retry 3 --retry-delay 2 https://astral.sh/uv/install.sh -o "$TOOLS/install-uv.sh"
+        else
+            wget -q https://astral.sh/uv/install.sh -O "$TOOLS/install-uv.sh"
+        fi
+        sh "$TOOLS/install-uv.sh"
+    fi
+
+    "$UV_INSTALL_DIR/uv" python install 3.12
+    PYTHON="$("$UV_INSTALL_DIR/uv" python find --managed-python 3.12)"
+fi
+
