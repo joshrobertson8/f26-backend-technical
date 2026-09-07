@@ -165,3 +165,49 @@ def install_node():
         if directory.is_dir():
             add_path(directory)
 
+    node = find("node")
+    version = capture([node, "--version"]) if node else ""
+    numbers = re.search(r"v(\d+)\.(\d+)", version)
+    npm = find("npm")
+    npm_cli = None
+
+    if npm:
+        npm_path = Path(npm).resolve()
+        if npm_path.name == "npm-cli.js":
+            npm_cli = npm_path
+        else:
+            candidate = npm_path.parent / "node_modules/npm/bin/npm-cli.js"
+            if candidate.is_file():
+                npm_cli = candidate
+
+    if numbers and tuple(map(int, numbers.groups())) >= (20, 9) and npm_cli:
+        add_path(Path(node).parent)
+        print(f"[ OK] Node.js {version.strip()}")
+        return Path(node), npm_cli
+
+    if SYSTEM == "Linux" and Path("/etc/alpine-release").exists():
+        install_packages(["nodejs", "npm"])
+        node = find("node")
+        npm = find("npm")
+        npm_cli = Path(npm).resolve() if npm else None
+        version = capture([node, "--version"]) if node else ""
+        numbers = re.search(r"v(\d+)\.(\d+)", version)
+        if not numbers or tuple(map(int, numbers.groups())) < (20, 9) or not npm_cli:
+            raise SetupError("This Alpine release needs a newer nodejs/npm package (Node 20.9+).")
+        return Path(node), npm_cli
+
+    target = {"Darwin": "darwin", "Linux": "linux", "Windows": "win"}[SYSTEM]
+    extension = "zip" if WINDOWS else "tar.gz"
+    base = "https://nodejs.org/dist/latest-v22.x/"
+    checksums = fetch(base + "SHASUMS256.txt").decode().splitlines()
+    suffix = f"-{target}-{architecture()}.{extension}"
+
+    for line in checksums:
+        digest, filename = line.split()
+        if filename.endswith(suffix):
+            archive = download(base + filename, filename, digest)
+            unpack(archive, TOOLS / "node")
+            break
+    else:
+        raise SetupError("No compatible Node.js 22 download was found.")
+
