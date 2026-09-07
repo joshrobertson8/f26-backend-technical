@@ -49,3 +49,44 @@ def run(label, command, cwd=ROOT):
         result = subprocess.run([str(arg) for arg in command], cwd=cwd, env=ENV,
                                 stdout=output, stderr=subprocess.STDOUT)
 
+    if result.returncode != 0:
+        lines = log_file.read_text(errors="replace").splitlines()
+        detail = "\n".join(lines[-35:])
+        raise SetupError(f"{label} failed.\n{detail}\nFull log: {log_file}")
+
+    print(f"[ OK] {label}", flush=True)
+
+
+def capture(command):
+    try:
+        result = subprocess.run([str(arg) for arg in command], env=ENV,
+                                capture_output=True, text=True, timeout=30)
+        if result.returncode == 0:
+            return result.stdout + result.stderr
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return ""
+
+
+def add_path(directory):
+    directory = str(directory)
+    if directory not in PATHS:
+        PATHS.append(directory)
+    ENV["PATH"] = os.pathsep.join(PATHS + [os.environ.get("PATH", "")])
+
+
+def find(name):
+    return shutil.which(name, path=ENV.get("PATH"))
+
+
+def fetch(url):
+    request = Request(url, headers={"User-Agent": "F26-events-setup"})
+    for attempt in range(3):
+        try:
+            with urlopen(request, timeout=90) as response:
+                return response.read()
+        except OSError:
+            if attempt == 2:
+                raise
+            time.sleep(2)
+
