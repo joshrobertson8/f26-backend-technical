@@ -237,3 +237,44 @@ class SetupTests(unittest.TestCase):
             os.chdir(project)
             os.execvp("bash", ["bash", "setup/setup.sh"])
 
+        output = b""
+        try:
+            os.write(terminal, b'printenv CANDIDATE_READY\ncat candidate.txt\nexit\n')
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                if select.select([terminal], [], [], 0.2)[0]:
+                    try:
+                        chunk = os.read(terminal, 4096)
+                    except OSError:
+                        break
+                    if not chunk:
+                        break
+                    output += chunk
+
+            self.assertIn(b"ready-after-setup", output)
+            self.assertIn(b"Tools are active", output)
+            self.assertIn(b"correct-challenge-directory", output)
+        finally:
+            os.close(terminal)
+            if os.waitpid(pid, os.WNOHANG)[0] == 0:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+
+    @unittest.skipUnless(setup.WINDOWS, "Windows terminal handoff")
+    def test_windows_launcher_keeps_the_prepared_terminal_open(self):
+        project = self.root / "events workspace"
+        project.mkdir()
+        shutil.copyfile(setup.SETUP / "setup.cmd", project / "setup.cmd")
+        (project / "setup.ps1").write_text('$env:CANDIDATE_READY = "ready-after-setup"\n')
+
+        result = subprocess.run(
+            ["cmd.exe", "/c", str(project / "setup.cmd")],
+            input="Write-Output $env:CANDIDATE_READY\nexit\n",
+            capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("ready-after-setup", result.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
