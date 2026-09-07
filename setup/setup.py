@@ -90,3 +90,34 @@ def fetch(url):
                 raise
             time.sleep(2)
 
+
+def download(url, filename, checksum):
+    cache = TOOLS / "downloads"
+    cache.mkdir(parents=True, exist_ok=True)
+    destination = cache / Path(filename).name
+
+    if destination.exists():
+        digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+        if digest == checksum:
+            return destination
+
+    print(f"[GET] {filename}", flush=True)
+    data = fetch(url)
+    if hashlib.sha256(data).hexdigest() != checksum:
+        raise SetupError(f"Checksum mismatch for {filename}; download was not installed.")
+
+    destination.write_bytes(data)
+    return destination
+
+
+def unpack(archive, destination):
+    with tempfile.TemporaryDirectory(dir=TOOLS, prefix="unpack-") as name:
+        staging = Path(name)
+
+        def inside(path):
+            try:
+                path.resolve().relative_to(staging.resolve())
+                return True
+            except ValueError:
+                return False
+
