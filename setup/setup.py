@@ -421,3 +421,37 @@ def prepare_python():
     run("Install FastAPI dependencies", [executable, "-m", "pip", "install", "-r", ROOT / "python-fastapi/requirements.txt"])
     return python, executable
 
+
+def write_activation(python, java_home=None, compiler=None, venv=None):
+    if venv is not None:
+        python = venv / ("Scripts/python.exe" if WINDOWS else "bin/python")
+
+    bin_dir = TOOLS / "bin"
+    bin_dir.mkdir(exist_ok=True)
+    for name in ["python", "python3"]:
+        if WINDOWS:
+            (bin_dir / (name + ".cmd")).write_text('@echo off\n"%F26_PYTHON%" %*\n', encoding="ascii")
+        else:
+            shim = bin_dir / name
+            if shim.is_symlink() or shim.exists():
+                shim.unlink()
+            shim.symlink_to(python)
+    add_path(bin_dir)
+    PATHS.remove(str(bin_dir))
+    PATHS.insert(0, str(bin_dir))
+
+    if venv is not None:
+        venv_bin = str(python.parent)
+        if venv_bin in PATHS:
+            PATHS.remove(venv_bin)
+        PATHS.insert(0, venv_bin)
+
+    ENV["PATH"] = os.pathsep.join(PATHS + [os.environ.get("PATH", "")])
+    values = {"F26_PYTHON": str(python)}
+
+    if venv is not None:
+        values["VIRTUAL_ENV"] = str(venv)
+
+    if java_home is not None:
+        values["JAVA_HOME"] = str(java_home)
+
