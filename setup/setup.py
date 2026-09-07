@@ -533,3 +533,34 @@ def main(arguments=None):
         if folder != "javascript-express":
             run(f"Build {folder}", [node, npm_cli, "run", "build"], ROOT / folder)
 
+    write_activation(python, java_home, compiler, venv)
+
+    test_script = "test.py" if folder == "java-spring-boot" else "tests/http_contract.py"
+    run(f"Check {folder}", [interpreter, test_script, "--smoke"], ROOT / folder)
+
+    (TOOLS / "selected-folder.txt").write_text(folder + "\n", encoding="utf-8")
+
+    test_command = "npm test"
+    if folder == "python-fastapi":
+        test_command = "python tests/http_contract.py"
+    elif folder == "java-spring-boot":
+        test_command = "python3 test.py"
+    elif folder == "c":
+        test_command = "python3 build.py test"
+
+    print(f"\n{OPTIONS[folder]} is ready.")
+    print(f"Your terminal will open in {folder}.")
+    print(f"Run tests with: {test_command}")
+    print("Run setup again when you open a new terminal.")
+    print()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nSetup cancelled.")
+        sys.exit(130)
+    except (SetupError, OSError, subprocess.CalledProcessError, ValueError) as error:
+        print(f"\n[ERROR] Setup did not finish.\n{error}\n", file=sys.stderr)
+        sys.exit(1)
