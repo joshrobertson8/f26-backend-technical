@@ -261,3 +261,72 @@ def install_java():
         unpack(archive, TOOLS / "java")
         home = TOOLS / "java/Contents/Home" if SYSTEM == "Darwin" else TOOLS / "java"
 
+    if not java_home_is_valid(home):
+        raise SetupError("The installed JDK could not run. A JDK, including javac, is required.")
+    ENV["JAVA_HOME"] = str(home)
+    add_path(home / "bin")
+    return home
+
+
+def package_commands(manager, packages):
+    if manager == "apt-get":
+        return [[manager, "update"], [manager, "install", "-y"] + packages]
+    if manager in ["dnf", "yum"]:
+        return [[manager, "install", "-y"] + packages]
+    if manager == "pacman":
+        return [[manager, "-S", "--needed", "--noconfirm"] + packages]
+    if manager == "zypper":
+        return [[manager, "--non-interactive", "install"] + packages]
+    if manager == "apk":
+        return [[manager, "add", "--no-cache"] + packages]
+    raise SetupError("No supported Linux package manager found (apt, dnf, yum, pacman, zypper, apk).")
+
+
+def install_packages(packages):
+    manager = next((name for name in ["apt-get", "dnf", "yum", "pacman", "zypper", "apk"] if find(name)), None)
+    prefix = []
+    if os.geteuid() != 0:
+        sudo = find("sudo")
+        if not sudo:
+            raise SetupError("Administrator access is needed to install system packages; sudo is unavailable.")
+        subprocess.run([sudo, "-v"], check=True)
+        prefix = [sudo]
+    for command in package_commands(manager, packages):
+        run("Install system packages", prefix + command)
+
+
+def compiler_works(compiler):
+    if not compiler:
+        return False
+    with tempfile.TemporaryDirectory(dir=TOOLS, prefix="compiler-check-") as name:
+        directory = Path(name)
+        source = directory / "check.c"
+        binary = directory / ("check.exe" if WINDOWS else "check")
+        source.write_text("#include <stdio.h>\nint main(void) { puts(\"compiler-ok\"); return 0; }\n")
+        command = [str(compiler), str(source), "-o", str(binary)]
+        try:
+            result = subprocess.run(command, env=ENV, capture_output=True, timeout=30)
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        if result.returncode != 0:
+            return False
+        return "compiler-ok" in capture([binary])
+
+
+def install_compiler():
+    candidates = [ENV.get("CC"), find("cc"), find("gcc"), find("clang")]
+    if WINDOWS:
+        msys_root = Path(ENV.get("MSYS2_ROOT", "C:/msys64"))
+        subdir = "clangarm64" if architecture() == "arm64" else "ucrt64"
+        compiler_name = "clang.exe" if subdir == "clangarm64" else "gcc.exe"
+        directory = msys_root / subdir / "bin"
+        if directory.exists():
+            add_path(directory)
+            candidates.insert(0, str(directory / compiler_name))
+
+    for compiler in candidates:
+        if compiler and Path(compiler).is_file() and compiler_works(compiler):
+            ENV["CC"] = str(compiler)
+            print(f"[ OK] C compiler: {compiler}")
+            return
+
