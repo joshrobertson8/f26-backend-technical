@@ -19,3 +19,18 @@ case "${1:-}" in
         ;;
 esac
 
+SETUP="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd -- "$SETUP/.." && pwd)"
+TOOLS="$SETUP/.tools"
+mkdir -p "$TOOLS"
+
+PYTHON=""
+for candidate in python3.12 python3.13 python3.11 python3.10 python3.9 python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+        if "$candidate" -c 'import sys; sys.exit(0 if (3, 9) <= sys.version_info[:2] < (3, 14) else 1)' 2>/dev/null; then
+            PYTHON="$(command -v "$candidate")"
+            break
+        fi
+    fi
+done
+
