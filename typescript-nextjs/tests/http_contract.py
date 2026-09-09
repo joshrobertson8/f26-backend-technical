@@ -69,6 +69,7 @@ class ApiTest(unittest.TestCase):
 
     def setUp(self):
         self.created_ids = []
+        self.request_inputs = []
 
     def tearDown(self):
         for event_id in self.created_ids:
@@ -79,6 +80,15 @@ class ApiTest(unittest.TestCase):
         return "/api/events/" + quote(event_id, safe="")
 
     def call(self, method, path, expected, body=None, raw=None):
+        request_input = f"{method} {path}"
+
+        if raw is not None:
+            request_input += "\nRaw body: " + repr(raw.decode(errors="replace"))
+        elif body is not None:
+            request_input += "\nBody: " + json.dumps(body, ensure_ascii=False)
+
+        self.request_inputs.append(request_input)
+
         status, data, wire = request(method, path, body, raw)
         self.assertEqual(
             status,
@@ -400,6 +410,24 @@ class ConsoleResult(unittest.TestResult):
 
         marker = f"[{self.status}]"
         print(f"  {marker:7} {label}", flush=True)
+
+        request_inputs = getattr(test, "request_inputs", [])
+        visible_inputs = request_inputs if self.verbose else request_inputs[:10]
+
+        if visible_inputs:
+            print("          Inputs:")
+
+            for request_input in visible_inputs:
+                for line in request_input.splitlines():
+                    print(f"            {line}")
+
+            hidden_inputs = len(request_inputs) - len(visible_inputs)
+
+            if hidden_inputs:
+                print(
+                    f"            Additional inputs hidden: {hidden_inputs}. "
+                    "Use --verbose to see all."
+                )
 
         if self.status == "PASS":
             self.passed_count += 1
